@@ -1,1 +1,5 @@
 import flydra_analysis_dataset
+import dataset_analysis_core 
+import trajectory_analysis_core
+import flydra_analysis_plot
+
