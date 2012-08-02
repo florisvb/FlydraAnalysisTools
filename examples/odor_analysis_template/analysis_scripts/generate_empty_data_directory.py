@@ -9,6 +9,7 @@ def main():
     os.mkdir(config.culled_datasets_path)
     os.mkdir(config.h5_files)
     os.mkdir(config.tmp_data_path)
+    os.mkdir(config.odor_control_path)
 
 if __name__ == '__main__':
     main()
