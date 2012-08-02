@@ -77,7 +77,7 @@ def plot_colored_cartesian_spagetti(dataset, axis='xy', xlim=(-0.2, .2), ylim=(-
     
 def main(culled_dataset, save_figure_path=''):
     print
-    print 'Plotting heatmaps'
+    print 'Plotting spagetti'
     plot_colored_cartesian_spagetti(culled_dataset, axis='xy', save_figure_path=save_figure_path)
     plot_colored_cartesian_spagetti(culled_dataset, axis='yz', save_figure_path=save_figure_path)
 
