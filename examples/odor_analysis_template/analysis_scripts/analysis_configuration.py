@@ -1,3 +1,5 @@
+import os
+
 class Config:
     def __init__(self):
     
@@ -14,7 +16,22 @@ class Config:
         
         # odor stuff
         self.odor_control_path = self.data_path + 'odor_data/'
-        self.odor_control_filename = 'odor_control_signal_20120801_194226'
+        
+        if 1: # default to find a file in the path
+            cmd = 'ls ' + self.odor_control_path
+            ls = os.popen(cmd).read()
+            all_filelist = ls.split('\n')
+            try:
+                all_filelist.remove('')
+            except:
+                pass
+            if len(all_filelist) == 1:
+                self.odor_control_filename = all_filelist[0]
+            else:
+                print 'could not find unique odor control file in path'
+            
+        if 0: # hard code the odor control file
+            self.odor_control_filename = 'odor_control_signal_20120801_194226'
         
         # h5 files
         self.h5_files = 'all'
