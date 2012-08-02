@@ -1,5 +1,5 @@
 import floris_math
-import adskalman.adskalman as adskalman
+import adskalman
 import numpy as np
 
 ###
