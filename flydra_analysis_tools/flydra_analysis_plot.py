@@ -148,34 +148,27 @@ def prep_cartesian_spagetti_for_saving(ax):
 
 ###############
 
-def heatmap(ax, dataset, axis='xy'):  
-
+def heatmap(ax, dataset, keys=None, axis='xy', logcolorscale=True):  
+    if keys is None:
+        keys = dataset.trajecs.keys()
+    
     # collect data
     xpos = np.array([])
     ypos = np.array([])
     zpos = np.array([])
     
-    for key, trajec in dataset.trajecs.items():
+    for key in keys:
+        trajec = dataset.trajecs[key]
         xpos = np.hstack( (xpos, trajec.positions[:,0]) )
         ypos = np.hstack( (ypos, trajec.positions[:,1]) )
         zpos = np.hstack( (zpos, trajec.positions[:,2]) )
     
     if axis == 'xy':
-        fpl.histogram2d(ax, xpos, ypos, bins=100, logcolorscale=True)
+        fpl.histogram2d(ax, xpos, ypos, bins=100, logcolorscale=logcolorscale)
     elif axis == 'xz':
-        fpl.histogram2d(ax, xpos, zpos, bins=100, logcolorscale=True)
+        fpl.histogram2d(ax, xpos, zpos, bins=100, logcolorscale=logcolorscale)
     elif axis == 'yz':
-        fpl.histogram2d(ax, ypos, zpos, bins=100, logcolorscale=True)
-    
-    if axis == 'xy':
-        post = patches.Circle( (0, 0), radius=0.01, facecolor='black', edgecolor='none', alpha=1, linewidth=0)
-    elif axis == 'yz':
-        post = patches.Rectangle( (-.01,0), width=0.02, facecolor='black', height=.16, edgecolor='none', alpha=1, linewidth=0)
-    artists = [post]
-    
-    if artists is not None:
-        for artist in artists:
-            ax.add_artist(artist)
+        fpl.histogram2d(ax, ypos, zpos, bins=100, logcolorscale=logcolorscale)
     
     if 'x' in axis:
         xticks = [-0.15, 0, 0.15]
@@ -189,7 +182,7 @@ def heatmap(ax, dataset, axis='xy'):
         
     if axis == 'xy':
         ax.set_xlim(-.15, .15)
-        ax.set_ylim(.2,-.8)
+        ax.set_ylim(.2,-.6)
         
     fpl.adjust_spines(ax, ['left', 'bottom'], xticks=xticks, yticks=yticks)
     
