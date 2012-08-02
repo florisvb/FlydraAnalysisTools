@@ -17,3 +17,8 @@ Use the analysis_configuration.py file to save a variety of settings that script
 
 Recommended usage: git clone/fork this directory and use it as a template to build a more complex/custom analysis, making the appropriate commits. This way in future experiments you can cherry-pick a directory that minimizes the work you need to do.
 
+====
+Using the code with your data
+====
+
+The simplest usage is to clone/fork this entire directory and use it as a template. Replace the h5 files in the h5 directory with your h5 file(s), delete the dataset.pickle constructs in raw_datasets and culled_datasets, and run analyze.py. From there you can start making the appropriate changes.
