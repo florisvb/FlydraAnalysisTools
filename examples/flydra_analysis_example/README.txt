@@ -8,5 +8,7 @@ This script will first analyze all the h5 files and save them in the flydra_anal
 Next the data is culled and additional functions can be run
 Lastly, a variety of plots can be generated
 
+Use the analysis_configuration.py file to save a variety of settings that scripts throughout the analysis directory may use.
+
 Recommended usage: git clone/fork this directory, and then build your analysis, making the appropriate commits. This way in future experiments you can cherry-pick a directory that minimizes the work you need to do.
 
