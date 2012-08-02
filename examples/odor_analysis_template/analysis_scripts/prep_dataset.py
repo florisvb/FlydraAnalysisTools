@@ -17,6 +17,7 @@ def culling_function(raw_dataset):
 
 def prep_data(culled_dataset, config):
     # stuff like calculating angular velocity, saccades etc.
+    culled_dataset.info = config.info
     fad.iterate_calc_function(culled_dataset, tac.calc_local_timestamps_from_strings) # calculate local timestamps
     oca.calc_odor_vs_no_odor_simple(culled_dataset, config.odor_control_path + config.odor_control_filename)
     return    

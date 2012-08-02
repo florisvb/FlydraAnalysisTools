@@ -19,4 +19,8 @@ class Config:
         self.kalman_smoothing = True
         
         # additional data
-        self.info = {}
+        self.description = 'description of experiment'
+        self.info = {   'flies': 'HCS', 
+                        'odor': 'none', 
+                        'description': self.description,
+                    }

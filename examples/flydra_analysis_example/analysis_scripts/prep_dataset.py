@@ -14,8 +14,9 @@ def culling_function(raw_dataset):
     return culled_dataset
 
 
-def prep_data(culled_dataset):
+def prep_data(culled_dataset, config):
     # stuff like calculating angular velocity, saccades etc.
+    culled_dataset.info = config.info
     fad.iterate_calc_function(culled_dataset, tac.calc_local_timestamps_from_strings) # calculate local timestamps
     return    
     
@@ -37,11 +38,11 @@ def main():
                 
         culled_dataset = culling_function(raw_dataset) 
         print 'Preparing culled dataset'
-        prep_data(culled_dataset)
+        prep_data(culled_dataset, config)
         fad.save(culled_dataset, config.culled_datasets_path + config.culled_dataset_name)
         print 'Saved culled dataset'
         
-    prep_data(culled_dataset)
+    prep_data(culled_dataset, config)
     
     return culled_dataset
     
