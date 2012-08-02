@@ -22,3 +22,5 @@ Using the code with your data
 ====
 
 The simplest usage is to clone/fork this entire directory and use it as a template. Replace the h5 files in the h5 directory with your h5 file(s), delete the dataset.pickle constructs in raw_datasets and culled_datasets, and run analyze.py. From there you can start making the appropriate changes.
+
+Note: save_h5_to_dataset.py may take several hours to complete its work, however, once finished dealing with the new dataset construct is very fast. Thus, it's best to only run save_h5_to_dataset.py when you first start working with an h5 file. 
