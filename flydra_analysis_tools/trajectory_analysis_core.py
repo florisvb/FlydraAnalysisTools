@@ -182,3 +182,20 @@ def calc_saccades(trajec, threshold_lo=300, threshold_hi=100000000, min_angle=10
         ax.add_artist(post)
                         
         fig.savefig('saccade_trajectory.pdf', format='pdf')
+        
+        
+########################################################################################################
+# Timestamp stuff
+########################################################################################################
+
+def calc_local_timestamps_from_strings(trajec):
+    hr = int(trajec.timestamp_local[9:11])
+    mi = int(trajec.timestamp_local[11:13])
+    se = int(trajec.timestamp_local[13:15])
+    trajec.timestamp_local_float = hr + mi/60. + se/3600.    
+        
+    
+    
+    
+
+
