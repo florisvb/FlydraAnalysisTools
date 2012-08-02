@@ -297,7 +297,7 @@ def load_single_h5(filename, save_as=None, save_dataset=True, return_dataset=Tru
     if return_dataset:
         return dataset
 
-def load_all_h5s_in_directory(path, print_filenames_only=False, kalmanized=True, savedataset=True, savename='merged_dataset', kalman_smoothing=True, dynamic_model=None, fps=None, info={}, save_covariance=False):
+def load_all_h5s_in_directory(path, print_filenames_only=False, kalmanized=True, savedataset=True, savename='merged_dataset', kalman_smoothing=True, dynamic_model=None, fps=None, info={}, save_covariance=False, tmp_path=''):
     # if you get an error, try appending an '/' at the end of the path
     # only looks at files that end in '.h5', assumes they are indeed .h5 files
     # kalmanized=True will only load files that have a name like kalmanized.h5
@@ -338,7 +338,8 @@ def load_all_h5s_in_directory(path, print_filenames_only=False, kalmanized=True,
         n += 1
         dataset = Dataset()
         dataset.load_data(filename, kalman_smoothing=kalman_smoothing, dynamic_model=dynamic_model, fps=fps, info=info, save_covariance=save_covariance)
-        tmpname = 'dataset_tmp_' + str(n)
+        tmpname = tmp_path + 'dataset_tmp_' + str(n)
+        print 'saving tmp file to: ', tmpname
         save(dataset, tmpname)
         dataset_list.append(dataset)
         
