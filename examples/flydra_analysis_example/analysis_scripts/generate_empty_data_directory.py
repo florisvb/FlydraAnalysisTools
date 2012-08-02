@@ -7,8 +7,11 @@ def main():
     
     os.mkdir(config.raw_datasets_path)
     os.mkdir(config.culled_datasets_path)
-    os.mkdir(config.h5_files)
+    os.mkdir(config.h5_path)
     os.mkdir(config.tmp_data_path)
 
 if __name__ == '__main__':
     main()
+        
+    print
+    print 'Successfully created data directory'
