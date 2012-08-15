@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib import patches
 import flydra_analysis_dataset as fad
     
-
+import floris_plot_lib as fpl
 ########################################################################################################
 # Culling
 ########################################################################################################
@@ -194,6 +194,32 @@ def calc_local_timestamps_from_strings(trajec):
     se = int(trajec.timestamp_local[13:15])
     trajec.timestamp_local_float = hr + mi/60. + se/3600.    
         
+    
+    
+def calc_positions_normalized_by_speed(trajec, normspeed=0.5, plot=False):
+    
+    distance_travelled = np.cumsum(trajec.speed)
+    distance_travelled_normalized = np.arange(distance_travelled[0], distance_travelled[-1], normspeed)
+    warped_time = np.interp(distance_travelled_normalized, distance_travelled, trajec.time_fly)
+    
+    trajec.positions_normalized_by_speed = np.zeros([len(warped_time), 3])
+    for i in range(3):
+        trajec.positions_normalized_by_speed[:,i] = np.interp(warped_time, trajec.time_fly, trajec.positions[:,i])
+    
+    trajec.time_normalized_by_speed = warped_time
+    
+    if plot:
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        x = trajec.positions[:,0]
+        y = trajec.positions[:,1]
+        speed = trajec.speed
+        fpl.colorline(ax,x,y,speed)    
+        
+        x_warped = trajec.positions_normalized_by_speed[:,0]
+        y_warped = trajec.positions_normalized_by_speed[:,1]
+        ax.plot(x_warped, y_warped, '.')
+    
     
     
     

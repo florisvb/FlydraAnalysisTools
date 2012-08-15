@@ -5,6 +5,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import patches
 
+import trajectory_analysis_core as tac
+
 def example_cartesian_spagetti(dataset, axis='xy', xlim=(-.15, .15), ylim=(-.25, .25), zlim=(-.15, -.15), keys=None, keys_to_highlight=[], show_saccades=False, colormap='jet', color_attribute=None, artists=None):
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -148,10 +150,18 @@ def prep_cartesian_spagetti_for_saving(ax):
 
 ###############
 
-def heatmap(ax, dataset, keys=None, axis='xy', logcolorscale=True):  
+def heatmap(ax, dataset, keys=None, axis='xy', logcolorscale=True, xticks=None, yticks=None, zticks=None, normalize_for_speed=True):  
     if keys is None:
         keys = dataset.trajecs.keys()
-    
+        
+    if 1: 
+        if xticks is None:
+            xticks = [-1, 0, 1]
+        if yticks is None:
+            yticks = [-1, 0, 1]
+        if zticks is None:
+            zticks = [-1, 0, 1]
+        
     # collect data
     xpos = np.array([])
     ypos = np.array([])
@@ -159,9 +169,17 @@ def heatmap(ax, dataset, keys=None, axis='xy', logcolorscale=True):
     
     for key in keys:
         trajec = dataset.trajecs[key]
-        xpos = np.hstack( (xpos, trajec.positions[:,0]) )
-        ypos = np.hstack( (ypos, trajec.positions[:,1]) )
-        zpos = np.hstack( (zpos, trajec.positions[:,2]) )
+        
+        if normalize_for_speed:
+            tac.calc_positions_normalized_by_speed(trajec, normspeed=0.5)
+            xpos = np.hstack( (xpos, trajec.positions_normalized_by_speed[:,0]) )
+            ypos = np.hstack( (ypos, trajec.positions_normalized_by_speed[:,1]) )
+            zpos = np.hstack( (zpos, trajec.positions_normalized_by_speed[:,2]) )
+    
+        else:
+            xpos = np.hstack( (xpos, trajec.positions[:,0]) )
+            ypos = np.hstack( (ypos, trajec.positions[:,1]) )
+            zpos = np.hstack( (zpos, trajec.positions[:,2]) )
     
     if axis == 'xy':
         fpl.histogram2d(ax, xpos, ypos, bins=100, logcolorscale=logcolorscale)
@@ -169,26 +187,31 @@ def heatmap(ax, dataset, keys=None, axis='xy', logcolorscale=True):
         fpl.histogram2d(ax, xpos, zpos, bins=100, logcolorscale=logcolorscale)
     elif axis == 'yz':
         fpl.histogram2d(ax, ypos, zpos, bins=100, logcolorscale=logcolorscale)
-    
-    if 'x' in axis:
-        xticks = [-0.15, 0, 0.15]
-    else:
-        xticks = None
-        
-    if 'z' in axis:
-        yticks = [0, .15, .30]
-    else:
-        yticks = None
         
     if axis == 'xy':
-        ax.set_xlim(-.15, .15)
-        ax.set_ylim(.2,-.6)
+        use_xticks = xticks
+        use_yticks = yticks
+        ax.set_xlabel('x axis')
+        ax.set_ylabel('y axis')
+    elif axis == 'yz':
+        use_xticks = yticks
+        use_yticks = zticks
+        ax.set_xlabel('y axis')
+        ax.set_ylabel('z axis')
+    elif axis == 'xz':
+        use_xticks = xticks
+        use_yticks = zticks
+        ax.set_xlabel('x axis')
+        ax.set_ylabel('z axis')
+    
+    if 1:
+        ax.set_xlim(use_xticks[0], use_xticks[-1])
+        ax.set_ylim(use_yticks[0], use_yticks[-1])
         
-    fpl.adjust_spines(ax, ['left', 'bottom'], xticks=xticks, yticks=yticks)
+    fpl.adjust_spines(ax, ['left', 'bottom'], xticks=use_xticks, yticks=use_yticks)
     
     ax.set_aspect('equal')
     
-
 
 def show_start_stop(dataset):
     
