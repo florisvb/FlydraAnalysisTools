@@ -138,7 +138,7 @@ class Trajectory(object):
         self.timestamp_local = time.strftime( '%Y%m%d_%H%M%S', time.localtime(extra['time_model'].framestamp2timestamp(kalman_rows[0][1])) )
         self.timestamp_epoch = extra['time_model'].framestamp2timestamp(kalman_rows[0][1])
 
-        self.time_fly = np.arange(0,self.length/self.fps,1/self.fps) 
+        self.time_fly = np.linspace(0,self.length/self.fps,self.length, endpoint=True) 
         self.positions = np.zeros([self.length, 3])
         self.velocities = np.zeros([self.length, 3])
         self.speed = np.zeros([self.length])
