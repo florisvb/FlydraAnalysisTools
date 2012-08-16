@@ -49,18 +49,19 @@ def polar_positions(trajec):
 # Distance to point / post
 ########################################################################################################
 
-def calc_xy_distance_to_point(trajec, xy_point):
+def calc_xy_distance_to_point(trajec, xy_point, normalized_for_speed=True):
     if type(xy_point) is not np.array or type(xy_point) is not np.ndarray:
         xy_point = np.array(xy_point)
     trajec.xy_distance_to_point = np.zeros_like(trajec.speed)
-    calc_positions_normalized_by_speed(trajec, normspeed=0.5)
-    trajec.xy_distance_to_point_normalized_by_speed = np.zeros_like(trajec.positions_normalized_by_speed[:,0])
     for i, d in enumerate(trajec.xy_distance_to_point):
         d = scipy.linalg.norm(trajec.positions[i,0:2] - xy_point)
         trajec.xy_distance_to_point[i] = d
-    for i, d in enumerate(trajec.xy_distance_to_point_normalized_by_speed):
-        d_normalized_by_speed = scipy.linalg.norm(trajec.positions_normalized_by_speed[i,0:2] - xy_point)
-        trajec.xy_distance_to_point_normalized_by_speed[i] = d_normalized_by_speed
+    
+    if normalized_for_speed:
+        trajec.xy_distance_to_point_normalized_by_speed = np.zeros_like(trajec.positions_normalized_by_speed[:,0])
+        for i, d in enumerate(trajec.xy_distance_to_point_normalized_by_speed):
+            d_normalized_by_speed = scipy.linalg.norm(trajec.positions_normalized_by_speed[i,0:2] - xy_point)
+            trajec.xy_distance_to_point_normalized_by_speed[i] = d_normalized_by_speed
     
 def calc_z_distance_to_point(trajec, z_point):
     trajec.z_distance_to_point = np.zeros_like(trajec.speed)
@@ -69,8 +70,15 @@ def calc_z_distance_to_point(trajec, z_point):
         trajec.z_distance_to_point[i] = d
         
 def calc_distance_to_post(trajec, top_center, radius):
-    calc_xy_distance_to_point(trajec, top_center[0:2])
-    calc_z_distance_to_point(trajec, top_center[2])
+    try:
+        tmp = trajec.xy_distance_to_point
+    except:
+        calc_xy_distance_to_point(trajec, top_center[0:2])
+    try:
+        tmp = trajec.z_distance_to_point
+    except:
+        calc_z_distance_to_point(trajec, top_center[2])
+        
     trajec.distance_to_post = np.zeros_like(trajec.xy_distance_to_point)
     for i, d in enumerate(trajec.xy_distance_to_point):
         if trajec.positions[i,2] < top_center[2]:
@@ -79,7 +87,11 @@ def calc_distance_to_post(trajec, top_center, radius):
             trajec.distance_to_post[i] = np.sqrt((trajec.xy_distance_to_point[i] - radius)**2 + (trajec.z_distance_to_point[i]**2))
             
 def calc_xy_distance_to_post(trajec, top_center, radius):
-    calc_xy_distance_to_point(trajec, top_center[0:2])
+    try:
+        tmp = trajec.xy_distance_to_point
+    except:
+        calc_xy_distance_to_point(trajec, top_center[0:2])
+        
     trajec.xy_distance_to_post = trajec.xy_distance_to_point - radius
             
 ########################################################################################################
@@ -219,7 +231,7 @@ def calc_local_timestamps_from_strings(trajec):
 # Normalized speed
 ########################################################################################################
     
-def calc_positions_normalized_by_speed(trajec, normspeed=0.5, plot=False):
+def calc_positions_normalized_by_speed(trajec, normspeed=0.2, plot=False):
     
     distance_travelled = np.cumsum(trajec.speed)
     distance_travelled_normalized = np.arange(distance_travelled[0], distance_travelled[-1], normspeed)
