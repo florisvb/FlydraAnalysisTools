@@ -12,6 +12,8 @@ import os
 import time
 import copy
 
+import matplotlib.pyplot as plt
+
 try:
     import flydra.a2.core_analysis as core_analysis
     import flydra.analysis.result_utils as result_utils
@@ -378,6 +380,24 @@ def make_dataset_with_attribute_filter(dataset, attr, val):
         new_dataset.trajecs.setdefault(key, dataset.trajecs[key])
     return new_dataset        
 
+def plot_simple(dataset, keys, axis=[0,1], view='cartesian'):
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    
+    if view == 'cartesian':
+        for key in keys:
+            trajec = dataset.trajecs[key]
+            ax.plot(trajec.positions[:,axis[0]], trajec.positions[:,axis[1]])
+            ax.plot(trajec.positions[0,axis[0]], trajec.positions[0,axis[1]], '.', color='green')
+            ax.plot(trajec.positions[-1,axis[0]], trajec.positions[-1,axis[1]], '.', color='red')
+            
+    elif view == 'radial':
+        for key in keys:
+            trajec = dataset.trajecs[key]
+            ax.plot(trajec.xy_distance_to_post, trajec.positions[:,2])
+            ax.plot(trajec.xy_distance_to_post[0], trajec.positions[0,2], '.', color='green')
+            ax.plot(trajec.xy_distance_to_post[-1], trajec.positions[-1,2], '.', color='red')
 
 ###################################################################################################
 # Example usage
