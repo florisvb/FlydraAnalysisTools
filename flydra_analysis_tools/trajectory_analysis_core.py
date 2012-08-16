@@ -63,11 +63,20 @@ def calc_z_distance_to_point(trajec, z_point):
         d = scipy.linalg.norm(trajec.positions[i,2] - z_point)
         trajec.z_distance_to_point[i] = d
         
-def calc_xy_distance_to_post(trajec, top_center, radius):
+def calc_distance_to_post(trajec, top_center, radius):
     calc_xy_distance_to_point(trajec, top_center[0:2])
     calc_z_distance_to_point(trajec, top_center[2])
+    trajec.distance_to_post = np.zeros_like(trajec.xy_distance_to_point)
+    for i, d in enumerate(trajec.xy_distance_to_point):
+        if trajec.positions[i,2] < top_center[2]:
+            trajec.distance_to_post[i] = trajec.xy_distance_to_point[i] - radius
+        else:
+            trajec.distance_to_post[i] = np.sqrt((trajec.xy_distance_to_point[i] - radius)**2 + (trajec.z_distance_to_point[i]**2))
+            
+def calc_xy_distance_to_post(trajec, top_center, radius):
+    calc_xy_distance_to_point(trajec, top_center[0:2])
     trajec.xy_distance_to_post = trajec.xy_distance_to_point - radius
-        
+            
 ########################################################################################################
 # Heading
 ########################################################################################################
@@ -150,7 +159,6 @@ def calc_saccades(trajec, threshold_lo=300, threshold_hi=100000000, min_angle=10
     
     trajec.all_saccades = []
     trajec.saccades = []
-    trajec.sac_ranges = []
     
     
     if len(possible_saccades) > 0:
@@ -166,7 +174,7 @@ def calc_saccades(trajec, threshold_lo=300, threshold_hi=100000000, min_angle=10
                 angle_of_saccade = np.abs(get_angle_of_saccade(trajec, indices)*180./np.pi)
                 mean_speed = np.mean(trajec.speed[indices])
                 if len(indices) > 3 and angle_of_saccade > 10: # and mean_speed > 0.005:
-                    trajec.sac_ranges.append(indices)
+                    trajec.saccades.append(indices)
                     s_rel = np.argmax( np.abs(trajec.heading_smooth_diff[indices]) )
                     s = indices[s_rel]
                     trajec.all_saccades.append(s)
@@ -178,7 +186,7 @@ def calc_saccades(trajec, threshold_lo=300, threshold_hi=100000000, min_angle=10
         
         ax.plot(trajec.positions[:,0], trajec.positions[:,1], '-', color='black', alpha=1, linewidth=1, zorder=1)
             
-        for sac in trajec.sac_ranges:        
+        for sac in trajec.saccades:        
             ax.plot(trajec.positions[sac,0], trajec.positions[sac,1], '-', color='red', alpha=1, linewidth=1, zorder=1+1)
         for s in trajec.all_saccades:
             x = trajec.positions[s, 0]
@@ -202,7 +210,9 @@ def calc_local_timestamps_from_strings(trajec):
     se = int(trajec.timestamp_local[13:15])
     trajec.timestamp_local_float = hr + mi/60. + se/3600.    
         
-    
+########################################################################################################
+# Normalized speed
+########################################################################################################
     
 def calc_positions_normalized_by_speed(trajec, normspeed=0.5, plot=False):
     
@@ -227,6 +237,53 @@ def calc_positions_normalized_by_speed(trajec, normspeed=0.5, plot=False):
         x_warped = trajec.positions_normalized_by_speed[:,0]
         y_warped = trajec.positions_normalized_by_speed[:,1]
         ax.plot(x_warped, y_warped, '.')
+    
+
+########################################################################################################
+# Landing vs Not Landing
+########################################################################################################
+    
+def calc_post_behavior(trajec, top_center, radius, landing_threshold=0.005, initial_threshold=0.08, landing_speed=0.008):
+    try:
+        tmp = trajec.distance_to_post
+    except:
+        calc_distance_to_post(trajec, top_center, radius)
+    try:
+        tmp = trajec.distance_to_post_min
+    except:
+        calc_distance_to_post_min(trajec, top_center, radius)
+    
+    trajec.post_behavior = 'none'
+    
+    if 0:
+        if trajec.speed[-1] <= landing_speed:
+            if trajec.distance_to_post[0] > initial_threshold:
+                if trajec.distance_to_post[-1] < landing_threshold:
+                    trajec.post_behavior = 'landing'
+     
+    if 1:
+        if np.max(trajec.speed) > 0.01 and np.max(trajec.distance_to_post) > initial_threshold: # double check to make sure fly flew
+            
+            if trajec.distance_to_post[-1] < landing_threshold:
+                trajec.post_behavior = 'landing'
+            elif trajec.distance_to_post[0] < landing_threshold:
+                trajec.post_behavior = 'takeoff'
+            elif trajec.distance_to_post_min < landing_threshold:
+                trajec.post_behavior = 'boomerang'  
+        
+def calc_distance_to_post_min(trajec, top_center, radius):
+    try:
+        tmp = trajec.distance_to_post
+    except:
+        calc_distance_to_post(trajec, top_center, radius)
+        
+    trajec.distance_to_post_min = np.min(trajec.distance_to_post)
+    trajec.distance_to_post_min_index = np.argmin(trajec.distance_to_post)
+    
+    
+    
+    
+    
     
     
     
