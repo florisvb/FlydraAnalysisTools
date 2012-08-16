@@ -168,7 +168,8 @@ def heatmap(ax, dataset, keys=None, axis='xy', logcolorscale=False, xticks=None,
             trajec = dataset.get_trajec()
             tmp = trajec.xy_distance_to_point
         except:
-            fad.iterate_calc_function(dataset, tac.calc_xy_distance_to_point, center)        
+            raise(ValueError, 'Need to calculate xy_distance_to_point prior to calling this function, see trajectory_analysis_core.calc_xy_distance_to_point')
+            #fad.iterate_calc_function(dataset, tac.calc_xy_distance_to_point, center)        
             
     # collect data
     xpos = np.array([])
@@ -180,7 +181,6 @@ def heatmap(ax, dataset, keys=None, axis='xy', logcolorscale=False, xticks=None,
         trajec = dataset.trajecs[key]
         
         if normalize_for_speed:
-            tac.calc_positions_normalized_by_speed(trajec, normspeed=0.5)
             xpos = np.hstack( (xpos, trajec.positions_normalized_by_speed[:,0]) )
             ypos = np.hstack( (ypos, trajec.positions_normalized_by_speed[:,1]) )
             zpos = np.hstack( (zpos, trajec.positions_normalized_by_speed[:,2]) )
