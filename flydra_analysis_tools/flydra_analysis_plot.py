@@ -150,22 +150,31 @@ def prep_cartesian_spagetti_for_saving(ax):
 
 ###############
 
-def heatmap(ax, dataset, keys=None, axis='xy', logcolorscale=False, xticks=None, yticks=None, zticks=None, normalize_for_speed=True, colornorm=None):  
+def heatmap(ax, dataset, keys=None, axis='xy', logcolorscale=False, xticks=None, yticks=None, zticks=None, rticks=None, normalize_for_speed=True, colornorm=None, center=[0,0]):  
     if keys is None:
         keys = dataset.trajecs.keys()
         
-    if 1: 
-        if xticks is None:
-            xticks = [-1, 0, 1]
-        if yticks is None:
-            yticks = [-1, 0, 1]
-        if zticks is None:
-            zticks = [-1, 0, 1]
+    if xticks is None:
+        xticks = [-1, 0, 1]
+    if yticks is None:
+        yticks = [-1, 0, 1]
+    if zticks is None:
+        zticks = [-1, 0, 1]
+    if rticks is None:
+        rticks = [-1, -1, 1]
+        
+    if axis == 'rz':
+        try:
+            trajec = dataset.get_trajec()
+            tmp = trajec.xy_distance_to_point
+        except:
+            fad.iterate_calc_function(dataset, tac.calc_xy_distance_to_point, center)        
             
     # collect data
     xpos = np.array([])
     ypos = np.array([])
     zpos = np.array([])
+    radial = np.array([])
     
     for key in keys:
         trajec = dataset.trajecs[key]
@@ -175,11 +184,13 @@ def heatmap(ax, dataset, keys=None, axis='xy', logcolorscale=False, xticks=None,
             xpos = np.hstack( (xpos, trajec.positions_normalized_by_speed[:,0]) )
             ypos = np.hstack( (ypos, trajec.positions_normalized_by_speed[:,1]) )
             zpos = np.hstack( (zpos, trajec.positions_normalized_by_speed[:,2]) )
+            radial = np.hstack( (radial, trajec.xy_distance_to_point_normalized_by_speed) )
     
         else:
             xpos = np.hstack( (xpos, trajec.positions[:,0]) )
             ypos = np.hstack( (ypos, trajec.positions[:,1]) )
             zpos = np.hstack( (zpos, trajec.positions[:,2]) )
+            radial = np.hstack( (radial, trajec.xy_distance_to_point) )
     
     if axis == 'xy':
         fpl.histogram2d(ax, xpos, ypos, bins=100, logcolorscale=logcolorscale, colornorm=colornorm)
@@ -187,6 +198,8 @@ def heatmap(ax, dataset, keys=None, axis='xy', logcolorscale=False, xticks=None,
         fpl.histogram2d(ax, xpos, zpos, bins=100, logcolorscale=logcolorscale, colornorm=colornorm)
     elif axis == 'yz':
         fpl.histogram2d(ax, ypos, zpos, bins=100, logcolorscale=logcolorscale, colornorm=colornorm)
+    elif axis == 'rz':
+        fpl.histogram2d(ax, radial, zpos, bins=100, logcolorscale=logcolorscale, colornorm=colornorm)
         
     if axis == 'xy':
         use_xticks = xticks
@@ -202,6 +215,11 @@ def heatmap(ax, dataset, keys=None, axis='xy', logcolorscale=False, xticks=None,
         use_xticks = xticks
         use_yticks = zticks
         ax.set_xlabel('x axis')
+        ax.set_ylabel('z axis')
+    elif axis == 'rz':
+        use_xticks = rticks
+        use_yticks = zticks
+        ax.set_xlabel('radial axis')
         ax.set_ylabel('z axis')
     
     if 1:
