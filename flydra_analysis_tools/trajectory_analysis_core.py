@@ -53,9 +53,14 @@ def calc_xy_distance_to_point(trajec, xy_point):
     if type(xy_point) is not np.array or type(xy_point) is not np.ndarray:
         xy_point = np.array(xy_point)
     trajec.xy_distance_to_point = np.zeros_like(trajec.speed)
+    calc_positions_normalized_by_speed(trajec, normspeed=0.5)
+    trajec.xy_distance_to_point_normalized_by_speed = np.zeros_like(trajec.positions_normalized_by_speed[:,0])
     for i, d in enumerate(trajec.xy_distance_to_point):
         d = scipy.linalg.norm(trajec.positions[i,0:2] - xy_point)
         trajec.xy_distance_to_point[i] = d
+    for i, d in enumerate(trajec.xy_distance_to_point_normalized_by_speed):
+        d_normalized_by_speed = scipy.linalg.norm(trajec.positions_normalized_by_speed[i,0:2] - xy_point)
+        trajec.xy_distance_to_point_normalized_by_speed[i] = d_normalized_by_speed
     
 def calc_z_distance_to_point(trajec, z_point):
     trajec.z_distance_to_point = np.zeros_like(trajec.speed)
