@@ -22,6 +22,12 @@ def cull_dataset_min_speed(dataset, min_speed=0.05, reset=True):
     fad.iterate_calc_function(dataset, tac.mark_for_culling_based_on_speed, keys=None, min_speed=min_speed)
     return fad.make_dataset_with_attribute_filter(dataset, 'cull', False)
     
+def cull_dataset_flight_envelope(dataset, x_range, y_range, z_range, reset=True):
+    if reset: fad.set_attribute_for_trajecs(dataset, 'cull', False)
+    fad.iterate_calc_function(dataset, tac.mark_for_culling_based_on_flight_volume, envelope=x_range, axis=0)
+    fad.iterate_calc_function(dataset, tac.mark_for_culling_based_on_flight_volume, envelope=y_range, axis=1)
+    fad.iterate_calc_function(dataset, tac.mark_for_culling_based_on_flight_volume, envelope=z_range, axis=2)
+    return fad.make_dataset_with_attribute_filter(dataset, 'cull', False)
     
 def calc_saccades_for_dataset(dataset):
     

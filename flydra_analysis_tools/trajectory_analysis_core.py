@@ -21,8 +21,16 @@ def mark_for_culling_based_on_cartesian_position(trajec, ok_range, axis=0):
     if np.max(trajec.positions[:,axis]) > np.max(ok_range) or np.min(trajec.positions[:,axis]) < np.min(ok_range):
         trajec.cull = True
         
+def mark_for_culling_based_on_flight_volume(trajec, envelope, axis=0):
+    middle_of_envelope = np.mean(envelope)
+    dist_to_middle_of_envelope = np.abs(trajec.positions[:,axis] - middle_of_envelope)
+    closest_to_middle = np.min(dist_to_middle_of_envelope)
+    if (closest_to_middle > np.max(envelope)) or (closest_to_middle < np.min(envelope)):
+        trajec.cull = True
+    
+        
 def mark_for_culling_based_on_speed(trajec, min_speed, axis=0):
-    if np.min(trajec.speed) < min_speed:
+    if np.max(trajec.speed) < min_speed:
         trajec.cull = True
          
 
