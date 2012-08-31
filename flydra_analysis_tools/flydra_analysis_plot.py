@@ -102,7 +102,7 @@ def cartesian_spagetti(ax, dataset, axes=[0,1], keys=None, nkeys=300, start_key=
                         #ax.add_artist(sac)
             
         if show_start:
-            start = patches.Circle( (trajec.positions[frames[0],0], trajec.positions[frames[0],1]), radius=0.002, facecolor='green', edgecolor='none', linewidth=0, alpha=1, zorder=zorder+1)
+            start = patches.Circle( (trajec.positions[frames[0],axes[0]], trajec.positions[frames[0],axes[1]]), radius=0.004, facecolor='green', edgecolor='none', linewidth=0, alpha=1, zorder=zorder+1)
             ax.add_artist(start)
     
     
