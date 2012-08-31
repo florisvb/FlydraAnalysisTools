@@ -362,7 +362,7 @@ def get_keys_with_attr(dataset, attr, val):
 def print_values_for_attributes_for_keys(dataset, attr, keys):
     for key in keys:
         trajec = dataset.trajecs[key]
-        print trajec.__getattribute__(attr)
+        print key, ' -- ', trajec.__getattribute__(attr)
     
 def get_trajec_with_attr(dataset, attr, val, n=0):
     keys = get_keys_with_attr(dataset, attr, val)
