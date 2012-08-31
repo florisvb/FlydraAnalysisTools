@@ -1,6 +1,7 @@
 import sys
-sys.path.append('/home/caveman/src/floris_functions')
-import floris_plot_lib as fpl
+import fly_plot_lib
+fly_plot_lib.set_params.pdf()
+import fly_plot_lib.plot as fpl
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import patches
