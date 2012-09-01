@@ -128,6 +128,59 @@ def calc_heading(trajec):
     trajec.heading_smooth = floris_math.fix_angular_rollover(trajec.heading_norollover_smooth)
     #trajec.heading_smooth_diff2 = xsmooth[:,2]
     
+def calc_heading_for_axes(trajec, axis='xy'):
+    if axis == 'xy':
+        axes = [0,1]
+    elif axis == 'xz':
+        axes = [2,0]
+    elif axis == 'yz':
+        axes = [1,2]
+        
+    heading_norollover_for_axes = floris_math.remove_angular_rollover(np.arctan2(trajec.velocities[:,axes[0]], trajec.velocities[:,axes[1]]), 3)
+    ## kalman
+    
+    data = heading_norollover_for_axes.reshape([len(heading_norollover_for_axes),1])
+    ss = 3 # state size
+    os = 1 # observation size
+    F = np.array([   [1,1,0], # process update
+                     [0,1,1],
+                     [0,0,1]],
+                    dtype=np.float)
+    H = np.array([   [1,0,0]], # observation matrix
+                    dtype=np.float)
+    Q = np.eye(ss) # process noise
+    Q[0,0] = .01
+    Q[1,1] = .01
+    Q[2,2] = .01
+    R = 1*np.eye(os) # observation noise
+    
+    initx = np.array([data[0,0], data[1,0]-data[0,0], 0], dtype=np.float)
+    initv = 0*np.eye(ss)
+    xsmooth,Vsmooth = kalman_math.kalman_smoother(data, F, H, Q, R, initx, initv, plot=False)
+
+    heading_norollover_smooth_for_axes = xsmooth[:,0]
+    heading_smooth_diff_for_axes = xsmooth[:,1]*trajec.fps
+    heading_for_axes = floris_math.fix_angular_rollover(heading_norollover_for_axes)
+    heading_smooth_for_axes = floris_math.fix_angular_rollover(heading_norollover_smooth_for_axes)
+    
+    if axis == 'xy':
+        trajec.heading_norollover_smooth_xy = heading_norollover_smooth_for_axes
+        trajec.heading_smooth_diff_xy = heading_smooth_diff_for_axes
+        trajec.heading_xy = heading_for_axes
+        trajec.heading_smooth_xy = heading_smooth_for_axes
+    if axis == 'xz':
+        trajec.heading_norollover_smooth_xz = heading_norollover_smooth_for_axes
+        trajec.heading_smooth_diff_xz = heading_smooth_diff_for_axes
+        trajec.heading_xz = heading_for_axes
+        trajec.heading_smooth_xz = heading_smooth_for_axes
+    if axis == 'yz':
+        trajec.heading_norollover_smooth_yz = heading_norollover_smooth_for_axes
+        trajec.heading_smooth_diff_yz = heading_smooth_diff_for_axes
+        trajec.heading_yz = heading_for_axes
+        trajec.heading_smooth_yz = heading_smooth_for_axes
+        
+    #trajec.heading_smooth_diff2 = xsmooth[:,2]
+    
 ########################################################################################################
 # Saccade detector
 ########################################################################################################
