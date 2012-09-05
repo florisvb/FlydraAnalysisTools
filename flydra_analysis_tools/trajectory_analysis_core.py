@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib import patches
 import flydra_analysis_dataset as fad
     
-import floris_plot_lib as fpl
+import fly_plot_lib.plot as fpl
 ########################################################################################################
 # Culling
 ########################################################################################################
@@ -70,14 +70,8 @@ def calc_z_distance_to_point(trajec, z_point):
         trajec.z_distance_to_point[i] = d
         
 def calc_distance_to_post(trajec, top_center, radius):
-    try:
-        tmp = trajec.xy_distance_to_point
-    except:
-        calc_xy_distance_to_point(trajec, top_center[0:2])
-    try:
-        tmp = trajec.z_distance_to_point
-    except:
-        calc_z_distance_to_point(trajec, top_center[2])
+    calc_xy_distance_to_point(trajec, top_center[0:2])
+    calc_z_distance_to_point(trajec, top_center[2])
         
     trajec.distance_to_post = np.zeros_like(trajec.xy_distance_to_point)
     for i, d in enumerate(trajec.xy_distance_to_point):
@@ -87,16 +81,15 @@ def calc_distance_to_post(trajec, top_center, radius):
             trajec.distance_to_post[i] = np.sqrt((trajec.xy_distance_to_point[i] - radius)**2 + (trajec.z_distance_to_point[i]**2))
             
 def calc_xy_distance_to_post(trajec, top_center, radius):
-    try:
-        tmp = trajec.xy_distance_to_point
-    except:
-        calc_xy_distance_to_point(trajec, top_center[0:2])
-        
+    calc_xy_distance_to_point(trajec, top_center[0:2])
     trajec.xy_distance_to_post = trajec.xy_distance_to_point - radius
             
 ########################################################################################################
 # Heading
 ########################################################################################################
+
+def calc_velocities_normed(trajec):
+    trajec.velocities_normed =  trajec.velocities / np.vstack((trajec.speed, trajec.speed, trajec.speed)).T
         
 def calc_heading(trajec):
     trajec.heading_norollover = floris_math.remove_angular_rollover(np.arctan2(trajec.velocities[:,1], trajec.velocities[:,0]), 3)
@@ -130,11 +123,11 @@ def calc_heading(trajec):
     
 def calc_heading_for_axes(trajec, axis='xy'):
     if axis == 'xy':
-        axes = [0,1]
+        axes = [1,0]
     elif axis == 'xz':
         axes = [2,0]
     elif axis == 'yz':
-        axes = [1,2]
+        axes = [2,1]
         
     heading_norollover_for_axes = floris_math.remove_angular_rollover(np.arctan2(trajec.velocities[:,axes[0]], trajec.velocities[:,axes[1]]), 3)
     ## kalman

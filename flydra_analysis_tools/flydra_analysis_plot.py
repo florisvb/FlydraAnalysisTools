@@ -151,7 +151,7 @@ def prep_cartesian_spagetti_for_saving(ax):
 
 ###############
 
-def heatmap(ax, dataset, keys=None, axis='xy', logcolorscale=False, xticks=None, yticks=None, zticks=None, rticks=None, normalize_for_speed=True, colornorm=None, center=[0,0]):  
+def heatmap(ax, dataset, keys=None, frame_list=None, axis='xy', logcolorscale=False, xticks=None, yticks=None, zticks=None, rticks=None, normalize_for_speed=True, colornorm=None, center=[0,0]):  
     if keys is None:
         keys = dataset.trajecs.keys()
         
@@ -178,20 +178,27 @@ def heatmap(ax, dataset, keys=None, axis='xy', logcolorscale=False, xticks=None,
     zpos = np.array([])
     radial = np.array([])
     
+    i = -1
     for key in keys:
+        i += 1
         trajec = dataset.trajecs[key]
         
+        if frame_list is None:
+            frames = np.arange(0, trajec.length-1)
+        else:
+            frames = frame_list[i]
+            
         if normalize_for_speed:
-            xpos = np.hstack( (xpos, trajec.positions_normalized_by_speed[:,0]) )
-            ypos = np.hstack( (ypos, trajec.positions_normalized_by_speed[:,1]) )
-            zpos = np.hstack( (zpos, trajec.positions_normalized_by_speed[:,2]) )
-            radial = np.hstack( (radial, trajec.xy_distance_to_point_normalized_by_speed) )
+            xpos = np.hstack( (xpos, trajec.positions_normalized_by_speed[frames[0]:frames[-1],0]) )
+            ypos = np.hstack( (ypos, trajec.positions_normalized_by_speed[frames[0]:frames[-1],1]) )
+            zpos = np.hstack( (zpos, trajec.positions_normalized_by_speed[frames[0]:frames[-1],2]) )
+            radial = np.hstack( (radial, trajec.xy_distance_to_point_normalized_by_speed[frames[0]:frames[-1]]) )
     
         else:
-            xpos = np.hstack( (xpos, trajec.positions[:,0]) )
-            ypos = np.hstack( (ypos, trajec.positions[:,1]) )
-            zpos = np.hstack( (zpos, trajec.positions[:,2]) )
-            radial = np.hstack( (radial, trajec.xy_distance_to_point) )
+            xpos = np.hstack( (xpos, trajec.positions[frames[0]:frames[-1],0]) )
+            ypos = np.hstack( (ypos, trajec.positions[frames[0]:frames[-1],1]) )
+            zpos = np.hstack( (zpos, trajec.positions[frames[0]:frames[-1],2]) )
+            radial = np.hstack( (radial, trajec.xy_distance_to_point[frames[0]:frames[-1]]) )
     
     if axis == 'xy':
         fpl.histogram2d(ax, xpos, ypos, bins=100, logcolorscale=logcolorscale, colornorm=colornorm)

@@ -25,6 +25,7 @@ class Dataset:
 
     def __init__(self):
         self.trajecs = {}
+        self.h5_files_loaded = []
 	
     def test(self, filename, kalman_smoothing=False, dynamic_model=None, fps=None, info={}, save_covariance=False):
         ca = core_analysis.get_global_CachingAnalyzer()
@@ -79,9 +80,11 @@ class Dataset:
                 continue
 
             # couple object ID dictionary with trajectory objects
-            trajec_id = str(obj_id) # this is not necessarily redundant with the obj_id, it allows for making a unique trajectory id when merging multiple datasets
+            trajec_id = filename[-18:-3] + '_' + str(obj_id) # filename details + original object id - this is unique
             tmp = Trajectory(trajec_id, kalman_rows, info=info, fps=fps, save_covariance=save_covariance, extra=extra)
             self.trajecs.setdefault(trajec_id, tmp)
+            
+        self.h5_files_loaded.append(filename)
             
         return
         
@@ -218,8 +221,13 @@ def merge_datasets(dataset_list):
     dataset = Dataset()
     n = 0
     for d in dataset_list:
+        dataset.h5_files_loaded.extend(d.h5_files_loaded)
         for k, trajec in d.trajecs.iteritems():
-            new_trajec_id = str(n) + '_' + k # make sure we use unique identifier
+            # check to see if trajec.key is in the dataset so far
+            if trajec.key in dataset.trajecs.keys():
+                new_trajec_id = str(n) + '_' + k
+            else:
+                new_trajec_id = k
             trajec.key = new_trajec_id
             
             # backwards compatibility stuff: NOTE: not fully backwards compatible! (laziness)
@@ -404,6 +412,43 @@ def plot_simple(dataset, keys, axis=[0,1], view='cartesian'):
             ax.plot(trajec.xy_distance_to_post[0], trajec.positions[0,2], '.', color='green')
             ax.plot(trajec.xy_distance_to_post[-1], trajec.positions[-1,2], '.', color='red')
 
+def get_similar_trajecs(dataset, master_trajec, attributes={'positions': 0.01, 'velocities_normed': .01}):
+    '''
+    Search through dataset and find trajectories that match the master_trajec in all attributes listed
+    The value associated with the attribute is the threshold acceptable for being "similar"
+    eg. "positions": 0.01 will search through all the positions of two trajectories and if any frames exist where the two positions are within 0.01 (in terms of 3d), then the trajectory is considered similar for that attribute.
+    '''
+    similar_keys = []
+    for key, trajec in dataset.trajecs.items():
+        is_similar = True
+        for attribute in attributes.keys():
+            err = np.abs(trajec.__getattribute__(attribute) - master_trajec.__getattribute__(attribute))
+            errsum = np.sum(err, axis=1)
+            minerr = np.min(errsum)
+            if not minerr < attributes[attribute]:
+                is_similar = False
+        if is_similar:
+            similar_keys.append(key)
+    return similar_keys
+    
+def get_keys_with_similar_attributes(dataset, attributes={'positions': [0, 0, 0], }, attribute_errs={'positions': 0.01}):
+    similar_keys = []
+    for key, trajec in dataset.trajecs.items():
+        is_similar = True
+        for attribute, val in attributes.items():
+            if type(val) is str:
+                if not trajec.__getattribute__(attribute) == val:
+                    is_similar = False
+            else:
+                err = np.abs(trajec.__getattribute__(attribute) - np.asarray(val))
+                errsum = np.sum(err, axis=1)
+                minerr = np.min(errsum)
+                if not minerr < attribute_errs[attribute]:
+                    is_similar = False
+        if is_similar:
+            similar_keys.append(key)
+    return similar_keys
+        
 ###################################################################################################
 # Example usage
 ###################################################################################################
