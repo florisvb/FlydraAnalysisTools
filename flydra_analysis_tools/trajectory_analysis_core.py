@@ -128,6 +128,7 @@ def calc_heading_for_axes(trajec, axis='xy'):
         axes = [2,0]
     elif axis == 'yz':
         axes = [2,1]
+    
         
     heading_norollover_for_axes = floris_math.remove_angular_rollover(np.arctan2(trajec.velocities[:,axes[0]], trajec.velocities[:,axes[1]]), 3)
     ## kalman
@@ -200,17 +201,14 @@ def get_angle_of_saccade(trajec, sac_range, method='integral', smoothed=True):
         return floris_math.fix_angular_rollover(signed_angleofsaccade)
     
     else:
-        if smoothed is False:
-            return floris_math.fix_angular_rollover(np.sum(trajec.heading_smooth_diff[sac_range]/100.)*-1)
+        if smoothed:
+            return floris_math.fix_angular_rollover(np.sum(trajec.heading_smooth_diff[sac_range]/100.))
         else:
-            return floris_math.fix_angular_rollover(np.sum( floris_math.diffa(trajec.heading)[sac_range])*-1)
-            
+            raise ValueError('need to do smoothed')            
         
 def calc_saccades(trajec, threshold_lo=300, threshold_hi=100000000, min_angle=10, plot=False):
     # thresholds in deg/sec
     # min_angle = minimum angle necessary to count as a saccade, deg
-    
-
     fps = 100.
         
     possible_saccade_array = (np.abs(trajec.heading_smooth_diff)*180/np.pi > threshold_lo)*(np.abs(trajec.heading_smooth_diff)*180/np.pi < threshold_hi)
@@ -241,7 +239,7 @@ def calc_saccades(trajec, threshold_lo=300, threshold_hi=100000000, min_angle=10
                     s_rel = np.argmax( np.abs(trajec.heading_smooth_diff[indices]) )
                     s = indices[s_rel]
                     trajec.all_saccades.append(s)
-            
+                    
     if plot:
         fig = plt.figure()
         ax = fig.add_subplot(111)
@@ -262,6 +260,82 @@ def calc_saccades(trajec, threshold_lo=300, threshold_hi=100000000, min_angle=10
                         
         fig.savefig('saccade_trajectory.pdf', format='pdf')
         
+        
+def calc_saccades_z(trajec, threshold_lo=200, threshold_hi=100000000, min_angle=10, plot=False):
+    # thresholds in deg/sec
+    # min_angle = minimum angle necessary to count as a saccade, deg
+
+    fps = 100.
+    
+    heading_norollover_for_axes = floris_math.remove_angular_rollover(np.arctan2(trajec.speed_xy[:], trajec.velocities[:,2]), 3)
+    ## kalman
+    
+    data = heading_norollover_for_axes.reshape([len(heading_norollover_for_axes),1])
+    ss = 3 # state size
+    os = 1 # observation size
+    F = np.array([   [1,1,0], # process update
+                     [0,1,1],
+                     [0,0,1]],
+                    dtype=np.float)
+    H = np.array([   [1,0,0]], # observation matrix
+                    dtype=np.float)
+    Q = np.eye(ss) # process noise
+    Q[0,0] = .01
+    Q[1,1] = .01
+    Q[2,2] = .01
+    R = 1*np.eye(os) # observation noise
+    
+    initx = np.array([data[0,0], data[1,0]-data[0,0], 0], dtype=np.float)
+    initv = 0*np.eye(ss)
+    xsmooth,Vsmooth = kalman_math.kalman_smoother(data, F, H, Q, R, initx, initv, plot=False)
+
+    heading_norollover_smooth_for_axes = xsmooth[:,0]
+    heading_smooth_diff_for_axes = xsmooth[:,1]*trajec.fps
+    heading_for_axes = floris_math.fix_angular_rollover(heading_norollover_for_axes)
+    heading_smooth_for_axes = floris_math.fix_angular_rollover(heading_norollover_smooth_for_axes)
+    
+    trajec.heading_altitude_smooth = heading_smooth_for_axes
+    trajec.heading_altitude_smooth_diff = heading_smooth_diff_for_axes
+    
+    ## saccades
+    
+    possible_saccade_array = (np.abs(trajec.heading_altitude_smooth_diff)*180/np.pi > threshold_lo)*(np.abs(trajec.heading_altitude_smooth_diff)*180/np.pi < threshold_hi)
+    possible_saccades = nim.find_blobs(possible_saccade_array, [3,100])
+    
+    if len(possible_saccades) == 1:
+        if np.sum(possible_saccades[0]) == 0:
+            possible_saccades = []
+    
+    trajec.saccades_z = []
+    
+    
+    if len(possible_saccades) > 0:
+        for sac in possible_saccades:
+            indices = np.where(sac==1)[0].tolist()
+            if len(indices) > 0:
+                # expand saccade range to make sure we get full turn
+                #lo = np.max([indices[0]-5, 0])
+                #hi = np.min([indices[-1]+5, len(trajec.speed)-2])
+                #new_indices = np.arange(lo, hi).tolist()
+                #tmp = np.where( np.abs(trajec.heading_diff_window[new_indices])*180/np.pi > 350 )[0].tolist()
+                #indices = np.array(new_indices)[ tmp ].tolist()
+                angle_of_saccade = np.abs(get_angle_of_saccade_z(trajec, indices)*180./np.pi)
+                mean_speed = np.mean(trajec.speed[indices])
+                if len(indices) > 3 and angle_of_saccade > 10: # and mean_speed > 0.005:
+                    trajec.saccades_z.append(indices)
+
+    if plot:
+        
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        
+        ax.plot(trajec.positions[:,0], trajec.positions[:,2], color='black')
+        for sac in trajec.saccades_z:
+            ax.plot(trajec.positions[sac,0], trajec.positions[sac,2], color='red')
+            
+def get_angle_of_saccade_z(trajec, sac):
+    return floris_math.fix_angular_rollover(np.sum(trajec.heading_altitude_smooth_diff[sac]/100.))
+    
         
 ########################################################################################################
 # Timestamp stuff
@@ -306,7 +380,7 @@ def calc_positions_normalized_by_speed(trajec, normspeed=0.2, plot=False):
 # Landing vs Not Landing
 ########################################################################################################
     
-def calc_post_behavior(trajec, top_center, radius, landing_threshold=0.005, initial_threshold=0.08, landing_speed=0.008):
+def calc_post_behavior(trajec, top_center, radius, landing_threshold=0.003, initial_threshold=0.05, landing_speed=0.1, boomerang_threshold=0.003, takeoff_threshold=0.004):
     try:
         tmp = trajec.distance_to_post
     except:
@@ -316,23 +390,75 @@ def calc_post_behavior(trajec, top_center, radius, landing_threshold=0.005, init
     except:
         calc_distance_to_post_min(trajec, top_center, radius)
     
-    trajec.post_behavior = 'none'
+    trajec.post_behavior = []
+    trajec.post_behavior_frames = []
+    trajec.residency_time = None
     
-    if 0:
-        if trajec.speed[-1] <= landing_speed:
-            if trajec.distance_to_post[0] > initial_threshold:
-                if trajec.distance_to_post[-1] < landing_threshold:
-                    trajec.post_behavior = 'landing'
-     
-    if 1:
-        if np.max(trajec.speed) > 0.01 and np.max(trajec.distance_to_post) > initial_threshold: # double check to make sure fly flew
+    if np.max(trajec.speed) > 0.01 and np.max(trajec.distance_to_post) > initial_threshold: # double check to make sure fly flew
+        
+        if trajec.distance_to_post[0] < takeoff_threshold:
+            trajec.post_behavior.append('takeoff')
+            frame_of_takeoff = np.where(trajec.distance_to_post > takeoff_threshold)[0][0]
+            trajec.post_behavior_frames.append(frame_of_takeoff)
+            candidate_behavior = 'landing'
+        else:
+            candidate_behavior = 'landing'
             
-            if trajec.distance_to_post[-1] < landing_threshold:
-                trajec.post_behavior = 'landing'
-            elif trajec.distance_to_post[0] < landing_threshold:
-                trajec.post_behavior = 'takeoff'
-            elif trajec.distance_to_post_min < landing_threshold:
-                trajec.post_behavior = 'boomerang'  
+        was_flying = False
+        if trajec.distance_to_post[0] > 0.01:
+            was_flying = True
+        
+        frame = 0
+        while frame < trajec.length-1:
+            if len(trajec.post_behavior_frames) > 0:
+                most_recent_frame_of_interest = trajec.post_behavior_frames[-1]
+            else:
+                most_recent_frame_of_interest = 0
+                
+            if candidate_behavior == 'landing':
+                for frame in range(most_recent_frame_of_interest, trajec.length):
+                    if trajec.distance_to_post[frame] < landing_threshold and was_flying and trajec.speed[frame] < landing_speed:
+                        trajec.post_behavior.append('landing')
+                        frame_of_landing = frame
+                        trajec.post_behavior_frames.append(frame_of_landing)
+                        candidate_behavior = 'takeoff'
+                        was_flying = False
+                        break
+            elif candidate_behavior == 'takeoff':
+                for frame in range(most_recent_frame_of_interest, trajec.length):
+                    if trajec.distance_to_post[frame] > takeoff_threshold and np.max(trajec.distance_to_post[frame:frame+20]) > 0.02:
+                        trajec.post_behavior.append('takeoff')
+                        frame_of_takeoff = frame
+                        trajec.post_behavior_frames.append(frame_of_takeoff)
+                        candidate_behavior = 'landing'
+                        break
+            
+                        
+            if trajec.distance_to_post[frame] > 0.01:
+                was_flying = True
+        
+        
+        if 'landing' in trajec.post_behavior and 'takeoff' in trajec.post_behavior:
+            check_for_takeoff = False
+            check_for_landing = True
+            for f, behavior in enumerate(trajec.post_behavior):
+                if behavior == 'landing':
+                    check_for_takeoff = True
+                    check_for_landing = False
+                    landing_frame = trajec.post_behavior_frames[f]
+                if check_for_takeoff:
+                    if behavior == 'takeoff':
+                        residency_time = (trajec.post_behavior_frames[f] - landing_frame) / trajec.fps
+                        trajec.post_behavior.append('boomerang')
+                        trajec.residency_time = residency_time 
+                        check_for_takeoff = False
+        
+        if trajec.residency_time is None and len(trajec.post_behavior) > 0:
+            if trajec.post_behavior[-1] == 'landing':
+                trajec.residency_time = (trajec.length - trajec.post_behavior_frames[-1]) / trajec.fps
+        
+            
+            
         
 def calc_distance_to_post_min(trajec, top_center, radius):
     try:
@@ -346,9 +472,20 @@ def calc_distance_to_post_min(trajec, top_center, radius):
     
     
     
+#def calc_post_approaches(trajec):
     
     
     
+#########################################################################3
+
+# casts and surges
+def in_range(val, rang):
+    if val < np.max(rang) and val > np.min(rang):
+        return True
+    else:
+        return False
+
+
     
     
 

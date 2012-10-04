@@ -387,7 +387,7 @@ def find_object_with_background_subtraction(img, background, mask=None, guess=No
         
     thresh_adj = 0
     blob = []
-    print 'blob: '
+    #print 'blob: '
     while np.sum(blob) <= 0: # use while loop to force finding an object
         diffthresh = threshold(diff, thresh+thresh_adj, threshold_hi=255)*255
         
@@ -396,13 +396,13 @@ def find_object_with_background_subtraction(img, background, mask=None, guess=No
             blobs = find_blobs(diffthresh, sizerange=sizerange, aslist=True)
             if len(blobs) > 1:
                 blob = find_blob_nearest_to_point(blobs, guess)
-                print '*0'
+                #print '*0'
             else:
                 blob = blobs[0]
-                print '*1'
+                #print '*1'
         else:
             blob = find_biggest_blob(diffthresh)
-            print '*2'
+            #print '*2'
             
         thresh_adj -= 1
         if thresh_adj+thresh <= 0: # failed to find anything at all!!
@@ -424,9 +424,9 @@ def find_object_with_background_subtraction(img, background, mask=None, guess=No
                 center = copy.copy(center)
                 return center    
     
-    print '******', blob.shape
+    #print '******', blob.shape
     relative_center = center_of_blob(blob)
-    print relative_center, zero
+    #print relative_center, zero
     center = relative_center + zero
     
     # find a uimg
@@ -450,7 +450,7 @@ def find_object(img, background=None, threshrange=[1,254], sizerange=[10,400], d
         diff = absdiff(img, background)
     else:
         diff = img
-    print '**shape diff** ', diff.shape
+    #print '**shape diff** ', diff.shape
     imgadj = auto_adjust_levels(diff)
     body = threshold(imgadj, threshrange[0], threshrange[1])*255
     
@@ -474,7 +474,7 @@ def find_object(img, background=None, threshrange=[1,254], sizerange=[10,400], d
         for j, d in enumerate(dist):
             if d < dist_thresh:
                 body += blobs[j]
-                                        
+                
     if body.max() > 1:
         body /= body.max()
     
@@ -488,7 +488,7 @@ def find_object(img, background=None, threshrange=[1,254], sizerange=[10,400], d
 
 def find_ellipse(img, background=None, threshrange=[1,254], sizerange=[10,400], dist_thresh=10, erode=False, check_centers=False):
     
-    print '**img shape** ', img.shape
+    #print '**img shape** ', img.shape
     body = find_object(img, background=background, threshrange=threshrange, sizerange=sizerange, dist_thresh=dist_thresh, erode=erode, check_centers=check_centers)
 
     if body.sum() < 1 and check_centers==True:

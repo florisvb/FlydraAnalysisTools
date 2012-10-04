@@ -80,11 +80,13 @@ class Dataset:
                 continue
 
             # couple object ID dictionary with trajectory objects
-            trajec_id = filename[-18:-3] + '_' + str(obj_id) # filename details + original object id - this is unique
+            filenamebase = os.path.basename(filename)
+            trajecbase = filenamebase.rstrip('5').rstrip('.h').lstrip('DATA').rstrip('.kalmanized')
+            trajec_id = trajecbase + '_' + str(obj_id) # filename details + original object id - this is unique
             tmp = Trajectory(trajec_id, kalman_rows, info=info, fps=fps, save_covariance=save_covariance, extra=extra)
             self.trajecs.setdefault(trajec_id, tmp)
             
-        self.h5_files_loaded.append(filename)
+        self.h5_files_loaded.append(os.path.basename(filename))
             
         return
         
@@ -142,6 +144,7 @@ class Trajectory(object):
 
         self.timestamp_local = time.strftime( '%Y%m%d_%H%M%S', time.localtime(extra['time_model'].framestamp2timestamp(kalman_rows[0][1])) )
         self.timestamp_epoch = extra['time_model'].framestamp2timestamp(kalman_rows[0][1])
+        self.timestamp_camera = kalman_rows[0][2]
 
         self.time_fly = np.linspace(0,self.length/self.fps,self.length, endpoint=True) 
         self.positions = np.zeros([self.length, 3])
@@ -360,18 +363,50 @@ def load_all_h5s_in_directory(path, print_filenames_only=False, kalmanized=True,
     
     return merged_dataset
         
-def get_keys_with_attr(dataset, attr, val):
-    keys = []
-    for k, trajec in dataset.trajecs.iteritems():
-        if trajec.__getattribute__(attr) == val:
-            keys.append(k)
-    return keys
-    
-def print_values_for_attributes_for_keys(dataset, attr, keys):
+def get_keys_with_attr(dataset, attributes, values, keys=None):
+    if keys is None:
+        keys = dataset.trajecs.keys()
+    if type(attributes) is not list:
+        attributes = [attributes]
+    if type(values) is not list:
+        values = [values]
+    keys_with_attr = []
     for key in keys:
         trajec = dataset.trajecs[key]
-        print key, ' -- ', trajec.__getattribute__(attr)
+        add_key = True
+        for i, attr in enumerate(attributes):
+            attr_val_for_trajec = trajec.__getattribute__(attr)
+            if type(attr_val_for_trajec) is list:
+                if values[i] not in attr_val_for_trajec:
+                    add_key = False
+            else:
+                if trajec.__getattribute__(attr) != values[i]:
+                    add_key = False
+        if add_key:
+            keys_with_attr.append(key)
+    return keys_with_attr
     
+def print_values_for_attributes_for_keys(dataset, attributes, keys, index=0):
+    if type(attributes) is not list:
+        attributes = [attributes]
+    if type(index) is not list:
+        index = [index]
+    for key in keys:
+        trajec = dataset.trajecs[key]
+        print_str = key
+        for a, attr in enumerate(attributes):
+            attribute = trajec.__getattribute__(attr)
+            if type(attribute) in [str, float, int, long, np.float64]:
+                print_str += ' -- ' + attr + ': ' + str(attribute)
+            else:
+                if type(index[a]) is int:
+                    print_str += ' -- ' + attr + ': ' + str(attribute[index[a]])
+                elif type(index[a]) is str:
+                    print_str += ' -- ' + attr + ': ' + str(np.__getattribute__(index[a])(attribute))
+                else:
+                    print_str += ' -- ' + attr + ': ' + str(attribute)
+        print print_str
+                
 def get_trajec_with_attr(dataset, attr, val, n=0):
     keys = get_keys_with_attr(dataset, attr, val)
     if n > len(keys):

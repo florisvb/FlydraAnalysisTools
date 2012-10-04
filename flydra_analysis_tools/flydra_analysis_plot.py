@@ -151,7 +151,7 @@ def prep_cartesian_spagetti_for_saving(ax):
 
 ###############
 
-def heatmap(ax, dataset, keys=None, frame_list=None, axis='xy', logcolorscale=False, xticks=None, yticks=None, zticks=None, rticks=None, normalize_for_speed=True, colornorm=None, center=[0,0]):  
+def heatmap(ax, dataset, keys=None, frame_list=None, axis='xy', logcolorscale=False, xticks=None, yticks=None, zticks=None, rticks=None, normalize_for_speed=True, colornorm=None, center=[0,0], bins=[100,100,100]):  
     if keys is None:
         keys = dataset.trajecs.keys()
         
@@ -201,13 +201,13 @@ def heatmap(ax, dataset, keys=None, frame_list=None, axis='xy', logcolorscale=Fa
             radial = np.hstack( (radial, trajec.xy_distance_to_point[frames[0]:frames[-1]]) )
     
     if axis == 'xy':
-        fpl.histogram2d(ax, xpos, ypos, bins=100, logcolorscale=logcolorscale, colornorm=colornorm)
+        fpl.histogram2d(ax, xpos, ypos, bins=[bins[0], bins[1]], logcolorscale=logcolorscale, colornorm=colornorm)
     elif axis == 'xz':
-        fpl.histogram2d(ax, xpos, zpos, bins=100, logcolorscale=logcolorscale, colornorm=colornorm)
+        fpl.histogram2d(ax, xpos, zpos, bins=[bins[0], bins[2]], logcolorscale=logcolorscale, colornorm=colornorm)
     elif axis == 'yz':
-        fpl.histogram2d(ax, ypos, zpos, bins=100, logcolorscale=logcolorscale, colornorm=colornorm)
+        fpl.histogram2d(ax, ypos, zpos, bins=[bins[1], bins[2]], logcolorscale=logcolorscale, colornorm=colornorm)
     elif axis == 'rz':
-        fpl.histogram2d(ax, radial, zpos, bins=100, logcolorscale=logcolorscale, colornorm=colornorm)
+        fpl.histogram2d(ax, radial, zpos, bins=[bins[0], bins[1]], logcolorscale=logcolorscale, colornorm=colornorm)
         
     if axis == 'xy':
         use_xticks = xticks
