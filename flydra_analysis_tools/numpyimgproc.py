@@ -25,8 +25,8 @@ def in_range(val, rang):
         return False
     
 def threshold(img, threshold_lo, threshold_hi=255):
-    threshed_lo = img>threshold_lo
-    threshed_hi = img<threshold_hi
+    threshed_lo = img>=threshold_lo
+    threshed_hi = img<=threshold_hi
     threshed = threshed_lo*threshed_hi
     return threshed
     
