@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 from matplotlib import patches
 import flydra_analysis_dataset as fad
     
+import copy
+
 import fly_plot_lib.plot as fpl
 ########################################################################################################
 # Culling
@@ -91,8 +93,12 @@ def calc_xy_distance_to_post(trajec, top_center, radius):
 def calc_velocities_normed(trajec):
     trajec.velocities_normed =  trajec.velocities / np.vstack((trajec.speed, trajec.speed, trajec.speed)).T
         
+def calc_heading_from_velocities(velocities):
+    heading_norollover = floris_math.remove_angular_rollover(np.arctan2(velocities[:,1], velocities[:,0]), 3)
+    return heading_norollover
+    
 def calc_heading(trajec):
-    trajec.heading_norollover = floris_math.remove_angular_rollover(np.arctan2(trajec.velocities[:,1], trajec.velocities[:,0]), 3)
+    trajec.heading_norollover = calc_heading_from_velocities(trajec.velocities)
     ## kalman
     
     data = trajec.heading_norollover.reshape([len(trajec.heading_norollover),1])
@@ -174,6 +180,42 @@ def calc_heading_for_axes(trajec, axis='xy'):
         trajec.heading_smooth_yz = heading_smooth_for_axes
         
     #trajec.heading_smooth_diff2 = xsmooth[:,2]
+    
+    
+def calc_airvelocity(trajec, windvelocity=[0,0,0]):
+    if type(windvelocity) is list:
+        windvelocity = np.array(windvelocity)
+        
+    trajec.airvelocities = copy.copy(trajec.velocities)
+    
+    for i in range(3):
+        trajec.airvelocities[:,i] += windvelocity[i]
+        
+def calc_airheading(trajec):
+    trajec.airheading_norollover = calc_heading_from_velocities(trajec.airvelocities)
+    ## kalman
+    
+    data = trajec.airheading_norollover.reshape([len(trajec.airheading_norollover),1])
+    ss = 3 # state size
+    os = 1 # observation size
+    F = np.array([   [1,1,0], # process update
+                     [0,1,1],
+                     [0,0,1]],
+                    dtype=np.float)
+    H = np.array([   [1,0,0]], # observation matrix
+                    dtype=np.float)
+    Q = np.eye(ss) # process noise
+    Q[0,0] = .01
+    Q[1,1] = .01
+    Q[2,2] = .01
+    R = 1*np.eye(os) # observation noise
+    
+    initx = np.array([data[0,0], data[1,0]-data[0,0], 0], dtype=np.float)
+    initv = 0*np.eye(ss)
+    xsmooth,Vsmooth = kalman_math.kalman_smoother(data, F, H, Q, R, initx, initv, plot=False)
+
+    trajec.airheading_smooth = floris_math.fix_angular_rollover(xsmooth[:,0])
+    
     
 ########################################################################################################
 # Saccade detector

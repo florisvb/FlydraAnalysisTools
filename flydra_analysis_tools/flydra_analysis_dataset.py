@@ -144,7 +144,6 @@ class Trajectory(object):
 
         self.timestamp_local = time.strftime( '%Y%m%d_%H%M%S', time.localtime(extra['time_model'].framestamp2timestamp(kalman_rows[0][1])) )
         self.timestamp_epoch = extra['time_model'].framestamp2timestamp(kalman_rows[0][1])
-        self.timestamp_camera = kalman_rows[0][2]
 
         self.time_fly = np.linspace(0,self.length/self.fps,self.length, endpoint=True) 
         self.positions = np.zeros([self.length, 3])
@@ -483,6 +482,20 @@ def get_keys_with_similar_attributes(dataset, attributes={'positions': [0, 0, 0]
         if is_similar:
             similar_keys.append(key)
     return similar_keys
+    
+def save_frame_to_key_dict(dataset):
+    frame_to_key = {}
+    for key in dataset.trajecs.keys():
+        print key
+        trajec = dataset.trajecs[key]
+        camera_frames = trajec.first_frame + np.arange(0, trajec.length)
+        for camera_frame in camera_frames:
+            if frame_to_key.has_key(camera_frame): 
+                frame_to_key[camera_frame].append(key)
+            else:
+                frame_to_key.setdefault(camera_frame, [key])
+    dataset.frame_to_key = frame_to_key
+    return 
         
 ###################################################################################################
 # Example usage
