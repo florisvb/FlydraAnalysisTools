@@ -71,6 +71,13 @@ def auto_adjust_levels(img):
         img3 = img2
     return img3
     
+
+def get_ellipse_longaxis(img):
+    center = center_of_blob(img)
+    ptsT = np.transpose(np.nonzero(img))
+    for pt in ptsT:
+        pt -= center
+    
 def get_ellipse_cov(img, erode=False, recenter=True):
     # Pattern. Recogn. 20, Sept. 1998, pp. 31-40
     # J. Prakash, and K. Rajesh
@@ -101,7 +108,7 @@ def get_ellipse_cov(img, erode=False, recenter=True):
             ptsT = np.transpose(np.nonzero(img))
             for pt in ptsT:
                 pt -= center
-            pts = (np.transpose(np.nonzero(img))).T
+            pts = (ptsT).T
             cov = np.cov(pts)
             cov = np.nan_to_num(cov)
             
@@ -109,6 +116,7 @@ def get_ellipse_cov(img, erode=False, recenter=True):
             
             longaxis = v[:,np.argmax(e)]
             shortaxis = v[:,np.argmin(e)]
+            
             
             if len(ptsT) > 2:
                 dl = [np.dot(longaxis, ptsT[i]) for i in range(len(ptsT))]
@@ -445,14 +453,23 @@ def find_object_with_background_subtraction(img, background, mask=None, guess=No
         return center
         
         
-def find_object(img, background=None, threshrange=[1,254], sizerange=[10,400], dist_thresh=10, erode=False, check_centers=False):
+def find_object(img, background=None, threshrange=[1,254], sizerange=[10,400], dist_thresh=10, erode=False, check_centers=False, autothreshpercentage=None):
     if background is not None:
         diff = absdiff(img, background)
     else:
         diff = img
     #print '**shape diff** ', diff.shape
-    imgadj = auto_adjust_levels(diff)
-    body = threshold(imgadj, threshrange[0], threshrange[1])*255
+    #imgadj = auto_adjust_levels(diff)
+    img = diff
+    
+    if autothreshpercentage is not None:
+        imgshaped = np.reshape(img, [np.product(img.shape)])
+        nthpixel = int(autothreshpercentage*len(imgshaped))
+        threshmax = np.sort(imgshaped)[nthpixel]
+        threshmin = np.min(imgshaped)-1
+        threshrange = [threshmin, threshmax]
+    
+    body = threshold(img, threshrange[0], threshrange[1])*255
     
     if erode is not False:
         for i in range(erode):
@@ -486,13 +503,13 @@ def find_object(img, background=None, threshrange=[1,254], sizerange=[10,400], d
     return body
 
 
-def find_ellipse(img, background=None, threshrange=[1,254], sizerange=[10,400], dist_thresh=10, erode=False, check_centers=False):
+def find_ellipse(img, background=None, threshrange=[1,254], sizerange=[10,400], dist_thresh=10, erode=False, check_centers=False, autothreshpercentage=None):
     
     #print '**img shape** ', img.shape
-    body = find_object(img, background=background, threshrange=threshrange, sizerange=sizerange, dist_thresh=dist_thresh, erode=erode, check_centers=check_centers)
+    body = find_object(img, background=background, threshrange=threshrange, sizerange=sizerange, dist_thresh=dist_thresh, erode=erode, check_centers=check_centers, autothreshpercentage=autothreshpercentage)
 
     if body.sum() < 1 and check_centers==True:
-        body = find_object(img, background=background, threshrange=threshrange, sizerange=sizerange, dist_thresh=dist_thresh, erode=erode, check_centers=check_centers)
+        body = find_object(img, background=background, threshrange=threshrange, sizerange=sizerange, dist_thresh=dist_thresh, erode=erode, check_centers=check_centers, autothreshpercentage=autothreshpercentage)
         
     body = binary_fill_holes(body)
     

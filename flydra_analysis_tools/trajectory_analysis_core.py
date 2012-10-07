@@ -520,12 +520,37 @@ def calc_distance_to_post_min(trajec, top_center, radius):
     
 #########################################################################3
 
-# casts and surges
-def in_range(val, rang):
-    if val < np.max(rang) and val > np.min(rang):
-        return True
-    else:
-        return False
+# acceleration kalmanized
+
+def get_acceleration(trajec):
+    ## kalman
+    velocities = trajec.velocities
+    
+    data = velocities
+    ss = 6 # state size
+    os = 3 # observation size
+    F = np.array([   [1,0,0,1,0,0], # process update
+                     [0,1,0,0,1,0],
+                     [0,0,1,0,0,1],
+                     [0,0,0,1,0,0],
+                     [0,0,0,0,1,0],
+                     [0,0,0,0,0,1]],                  
+                    dtype=np.float)
+    H = np.array([   [1,0,0,0,0,0], [0,1,0,0,0,0], [0,0,1,0,0,0]], # observation matrix
+                    dtype=np.float)
+    Q = 0.01*np.eye(ss) # process noise
+    
+    R = 1*np.eye(os) # observation noise
+    
+    initx = np.array([velocities[0,0], velocities[0,1], velocities[0,2], 0, 0, 0], dtype=np.float)
+    initv = 0*np.eye(ss)
+    xsmooth,Vsmooth = kalman_math.kalman_smoother(data, F, H, Q, R, initx, initv, plot=False)
+
+    accel_smooth = xsmooth[:,3:]*100.
+    
+    return accel_smooth
+    
+    
 
 
     
