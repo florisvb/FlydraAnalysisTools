@@ -202,6 +202,7 @@ def load(filename):
     
 def copy_dataset(dataset):
     new_dataset = Dataset()
+    new_dataset.h5_files_loaded = copy.copy(dataset.h5_files_loaded)
     for key, trajec in dataset.trajecs.items():
         new_trajec = Trajectory(copy.copy(trajec.key))
         for key, item in trajec.__dict__.items():
@@ -422,6 +423,7 @@ def set_attribute_for_trajecs(dataset, attr, val, keys=None):
         
 def make_dataset_with_attribute_filter(dataset, attr, val):
     new_dataset = Dataset()
+    new_dataset.h5_files_loaded = copy.copy(dataset.h5_files_loaded)
     keys = get_keys_with_attr(dataset, attr, val)
     for key in keys:
         new_dataset.trajecs.setdefault(key, dataset.trajecs[key])
@@ -483,19 +485,22 @@ def get_keys_with_similar_attributes(dataset, attributes={'positions': [0, 0, 0]
             similar_keys.append(key)
     return similar_keys
     
-def save_frame_to_key_dict(dataset):
+def get_frame_to_key_dict(h5, dataset):
     frame_to_key = {}
+    if '.h5' in h5:
+        h5 = h5.split('.')[0]
+    
     for key in dataset.trajecs.keys():
-        print key
-        trajec = dataset.trajecs[key]
-        camera_frames = trajec.first_frame + np.arange(0, trajec.length)
-        for camera_frame in camera_frames:
-            if frame_to_key.has_key(camera_frame): 
-                frame_to_key[camera_frame].append(key)
-            else:
-                frame_to_key.setdefault(camera_frame, [key])
-    dataset.frame_to_key = frame_to_key
-    return 
+        if h5 in key:
+            trajec = dataset.trajecs[key]
+            camera_frames = trajec.first_frame + np.arange(0, trajec.length)
+            for camera_frame in camera_frames:
+                if frame_to_key.has_key(camera_frame): 
+                    frame_to_key[camera_frame].append(key)
+                else:
+                    frame_to_key.setdefault(camera_frame, [key])
+        
+    return frame_to_key
         
 ###################################################################################################
 # Example usage

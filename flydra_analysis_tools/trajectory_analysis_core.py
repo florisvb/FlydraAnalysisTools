@@ -97,7 +97,7 @@ def calc_heading_from_velocities(velocities):
     heading_norollover = floris_math.remove_angular_rollover(np.arctan2(velocities[:,1], velocities[:,0]), 3)
     return heading_norollover
     
-def calc_heading(trajec):
+def calc_heading(trajec, flip=True):
     trajec.heading_norollover = calc_heading_from_velocities(trajec.velocities)
     ## kalman
     
@@ -125,6 +125,13 @@ def calc_heading(trajec):
     
     trajec.heading = floris_math.fix_angular_rollover(trajec.heading_norollover)
     trajec.heading_smooth = floris_math.fix_angular_rollover(trajec.heading_norollover_smooth)
+    
+    if flip:
+        ip = np.where(trajec.heading_smooth>0)
+        im = np.where(trajec.heading_smooth<=0)
+        trajec.heading_smooth[ip] -= np.pi
+        trajec.heading_smooth[im] += np.pi
+    
     #trajec.heading_smooth_diff2 = xsmooth[:,2]
     
 def calc_heading_for_axes(trajec, axis='xy'):
@@ -191,7 +198,7 @@ def calc_airvelocity(trajec, windvelocity=[0,0,0]):
     for i in range(3):
         trajec.airvelocities[:,i] += windvelocity[i]
         
-def calc_airheading(trajec):
+def calc_airheading(trajec, flip=True):
     trajec.airheading_norollover = calc_heading_from_velocities(trajec.airvelocities)
     ## kalman
     
@@ -215,6 +222,12 @@ def calc_airheading(trajec):
     xsmooth,Vsmooth = kalman_math.kalman_smoother(data, F, H, Q, R, initx, initv, plot=False)
 
     trajec.airheading_smooth = floris_math.fix_angular_rollover(xsmooth[:,0])
+    
+    if flip:
+        ip = np.where(trajec.airheading_smooth>0)
+        im = np.where(trajec.airheading_smooth<=0)
+        trajec.airheading_smooth[ip] -= np.pi
+        trajec.airheading_smooth[im] += np.pi
     
     
 ########################################################################################################
