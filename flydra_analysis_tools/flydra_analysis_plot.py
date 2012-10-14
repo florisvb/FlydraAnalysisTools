@@ -188,17 +188,22 @@ def heatmap(ax, dataset, keys=None, frame_list=None, axis='xy', logcolorscale=Fa
         else:
             frames = frame_list[i]
             
+        if len(frames) == 0:
+            continue
+            
         if normalize_for_speed:
-            xpos = np.hstack( (xpos, trajec.positions_normalized_by_speed[frames[0]:frames[-1],0]) )
-            ypos = np.hstack( (ypos, trajec.positions_normalized_by_speed[frames[0]:frames[-1],1]) )
-            zpos = np.hstack( (zpos, trajec.positions_normalized_by_speed[frames[0]:frames[-1],2]) )
-            radial = np.hstack( (radial, trajec.xy_distance_to_point_normalized_by_speed[frames[0]:frames[-1]]) )
+            xpos = np.hstack( (xpos, trajec.positions_normalized_by_speed[frames,0]) )
+            ypos = np.hstack( (ypos, trajec.positions_normalized_by_speed[frames,1]) )
+            zpos = np.hstack( (zpos, trajec.positions_normalized_by_speed[frames,2]) )
+            if axis == 'rz':
+                radial = np.hstack( (radial, trajec.xy_distance_to_point_normalized_by_speed[frames]) )
     
         else:
-            xpos = np.hstack( (xpos, trajec.positions[frames[0]:frames[-1],0]) )
-            ypos = np.hstack( (ypos, trajec.positions[frames[0]:frames[-1],1]) )
-            zpos = np.hstack( (zpos, trajec.positions[frames[0]:frames[-1],2]) )
-            radial = np.hstack( (radial, trajec.xy_distance_to_point[frames[0]:frames[-1]]) )
+            xpos = np.hstack( (xpos, trajec.positions[frames,0]) )
+            ypos = np.hstack( (ypos, trajec.positions[frames,1]) )
+            zpos = np.hstack( (zpos, trajec.positions[frames,2]) )
+            if axis == 'rz':
+                radial = np.hstack( (radial, trajec.xy_distance_to_point[frames]) )
     
     if axis == 'xy':
         fpl.histogram2d(ax, xpos, ypos, bins=[bins[0], bins[1]], logcolorscale=logcolorscale, colornorm=colornorm)
@@ -237,6 +242,8 @@ def heatmap(ax, dataset, keys=None, frame_list=None, axis='xy', logcolorscale=Fa
     fpl.adjust_spines(ax, ['left', 'bottom'], xticks=use_xticks, yticks=use_yticks)
     
     ax.set_aspect('equal')
+    
+    print 'MAX Z: ', np.max(zpos)
     
 
 def show_start_stop(dataset):

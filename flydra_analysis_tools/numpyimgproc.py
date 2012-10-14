@@ -10,6 +10,8 @@ from scipy.ndimage.morphology import binary_erosion
 from scipy.ndimage.morphology import binary_dilation
 from scipy.ndimage.morphology import binary_fill_holes
 
+
+
 import copy
 
 inf = np.inf
@@ -503,7 +505,7 @@ def find_object(img, background=None, threshrange=[1,254], sizerange=[10,400], d
     return body
 
 
-def find_ellipse(img, background=None, threshrange=[1,254], sizerange=[10,400], dist_thresh=10, erode=False, check_centers=False, autothreshpercentage=None):
+def find_ellipse(img, background=None, threshrange=[1,254], sizerange=[10,400], dist_thresh=10, erode=False, check_centers=False, autothreshpercentage=None, show=False):
     
     #print '**img shape** ', img.shape
     body = find_object(img, background=background, threshrange=threshrange, sizerange=sizerange, dist_thresh=dist_thresh, erode=erode, check_centers=check_centers, autothreshpercentage=autothreshpercentage)
@@ -517,6 +519,17 @@ def find_ellipse(img, background=None, threshrange=[1,254], sizerange=[10,400], 
         body[body.shape[0] / 2, body.shape[1] / 2] = 1
     
     center, longaxis, shortaxis, ratio = get_ellipse_cov(body, erode=False, recenter=True)
+    
+    
+    if show:
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.imshow(img)
+        
+        circle = patches.Circle((center[1], center[0]), 2, facecolor='white', edgecolor='none')
+        ax.add_artist(circle)
+        ax.plot([center[1]-longaxis[1]*ratio[0], center[1]+longaxis[1]*ratio[0]], [center[0]-longaxis[0]*ratio[0], center[0]+longaxis[0]*ratio[0]], zorder=10, color='white')
+    
     
     return center, longaxis, shortaxis, body, ratio
     
