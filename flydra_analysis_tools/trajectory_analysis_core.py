@@ -131,6 +131,8 @@ def calc_heading(trajec, flip=True):
         im = np.where(trajec.heading_smooth<=0)
         trajec.heading_smooth[ip] -= np.pi
         trajec.heading_smooth[im] += np.pi
+        
+        trajec.heading_smooth *= -1
     
     #trajec.heading_smooth_diff2 = xsmooth[:,2]
     
@@ -289,7 +291,7 @@ def calc_saccades(trajec, threshold_lo=300, threshold_hi=100000000, min_angle=10
                 #indices = np.array(new_indices)[ tmp ].tolist()
                 angle_of_saccade = np.abs(get_angle_of_saccade(trajec, indices)*180./np.pi)
                 mean_speed = np.mean(trajec.speed[indices])
-                if len(indices) > 3 and angle_of_saccade > 10: # and mean_speed > 0.005:
+                if len(indices) > 3 and angle_of_saccade > min_angle: # and mean_speed > 0.005:
                     trajec.saccades.append(indices)
                     s_rel = np.argmax( np.abs(trajec.heading_smooth_diff[indices]) )
                     s = indices[s_rel]

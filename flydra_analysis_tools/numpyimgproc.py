@@ -43,7 +43,7 @@ def compare(a, b=None, method=None):
 
     if type(a) is list:
         result = a[0]
-        for i in range([1,len(a)]):
+        for i in range(1,len(a)):
             if method == 'lighten':
                 result = np.maximum(result,a[i])
             elif method == 'darken':

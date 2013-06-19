@@ -2,6 +2,7 @@ import sys
 import fly_plot_lib
 fly_plot_lib.set_params.pdf()
 import fly_plot_lib.plot as fpl
+import fly_plot_lib.flymath as flymath
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import patches
@@ -151,7 +152,15 @@ def prep_cartesian_spagetti_for_saving(ax):
 
 ###############
 
-def heatmap(ax, dataset, keys=None, frame_list=None, axis='xy', logcolorscale=False, xticks=None, yticks=None, zticks=None, rticks=None, normalize_for_speed=True, colornorm=None, center=[0,0], bins=[100,100,100]):  
+def heatmap(ax, dataset, keys=None, frame_list=None, axis='xy', logcolorscale=False, xticks=None, yticks=None, zticks=None, rticks=None, normalize_for_speed=True, colornorm=None, center=[0,0], bins=[100,100,100], depth_range=None):  
+    
+    if axis == 'xy':
+        axis_num = [0,1,2]
+    elif axis == 'xz':
+        axis_num = [0,2,1]
+    elif axis == 'yz':
+        axis_num = [1,2,0] 
+
     if keys is None:
         keys = dataset.trajecs.keys()
         
@@ -184,9 +193,19 @@ def heatmap(ax, dataset, keys=None, frame_list=None, axis='xy', logcolorscale=Fa
         trajec = dataset.trajecs[key]
         
         if frame_list is None:
-            frames = np.arange(0, trajec.length-1)
+            if depth_range is None:
+                frames = np.arange(0, trajec.length-1)
+            else:
+                frames = []
+                for f in range(trajec.length):
+                    if flymath.in_range(trajec.positions[f,axis_num[-1]], depth_range):
+                        frames.append(f)
         else:
             frames = frame_list[i]
+            
+            
+        
+        
             
         if len(frames) == 0:
             continue
@@ -242,8 +261,6 @@ def heatmap(ax, dataset, keys=None, frame_list=None, axis='xy', logcolorscale=Fa
     fpl.adjust_spines(ax, ['left', 'bottom'], xticks=use_xticks, yticks=use_yticks)
     
     ax.set_aspect('equal')
-    
-    print 'MAX Z: ', np.max(zpos)
     
 
 def show_start_stop(dataset):

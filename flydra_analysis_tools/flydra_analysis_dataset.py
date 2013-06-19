@@ -47,7 +47,7 @@ class Dataset:
             fps = result_utils.get_fps(data_file)
         if dynamic_model is None:
             try:
-	            dyn_model = extra['dynamic_model_name']
+                dyn_model = extra['dynamic_model_name']
             except:
                 print 'cannot find dynamic model'
                 print 'using EKF mamarama, units: mm'
@@ -501,7 +501,26 @@ def get_frame_to_key_dict(h5, dataset):
                     frame_to_key.setdefault(camera_frame, [key])
         
     return frame_to_key
-        
+    
+def remove_keys(dataset, keys):
+    for key in keys:
+        dataset.trajecs.pop(key)
+        print key
+
+def remove_keys_from_h5(dataset, h5):
+    h5 = h5.rstrip('.h5').lstrip('DATA')
+    keys = []
+    for key in dataset.trajecs.keys():
+        if h5 in key:
+            keys.append(key)
+    remove_keys(dataset, keys)  
+    
+    for i, f in enumerate(dataset.h5_files_loaded):
+        if h5 in f:
+            dataset.h5_files_loaded.pop(i)
+    
+    
+             
 ###################################################################################################
 # Example usage
 ###################################################################################################
