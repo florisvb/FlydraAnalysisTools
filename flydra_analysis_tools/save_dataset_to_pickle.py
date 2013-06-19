@@ -1,22 +1,44 @@
 from flydra_analysis_tools import flydra_analysis_dataset as fad
 import pickle
+import scipy.io
 
-def save_dataset_to_pickle(dataset, filename):
+def save_dataset_to_pickle(dataset, filename, min_trajec_length=5, num_trajecs=100):
     data_dict = {}
-    for key, trajec in dataset.trajecs.items():
-        t = {}
-        t.setdefault('position', trajec.positions)
-        t.setdefault('velocity', trajec.velocities)
-        t.setdefault('speed', trajec.speed)
-        t.setdefault('odor', trajec.odor)
-        t.setdefault('odorstimulus', trajec.odor_stimulus)
-        
-        data_dict.setdefault(key, t)
     
+    n = 0
+    for key, trajec in dataset.trajecs.items():
+        if trajec.length > min_trajec_length:
+            if n < num_trajecs:
+                t = {}
+                t.setdefault('position', trajec.positions)
+                #t.setdefault('velocity', trajec.velocities)
+                #t.setdefault('speed', trajec.speed)
+                #t.setdefault('odor', trajec.odor)
+                #t.setdefault('odorstimulus', trajec.odor_stimulus)
+                
+                data_dict.setdefault(key, t)
+                n += 1
+                
     f = open(filename, 'w')
     pickle.dump(data_dict, f)
     f.close()
     
+    
+def save_dataset_to_mat(dataset, filename, min_trajec_length=5, num_trajecs=100):
+    data_dict = {}
+    
+    n = 0
+    for key, trajec in dataset.trajecs.items():
+        if trajec.length > min_trajec_length:
+            if n < num_trajecs:
+                t = trajec.positions
+                k = 't' + key
+                data_dict.setdefault(k, t)
+                n += 1
+                
+    scipy.io.savemat(filename, data_dict)    
+    
+
 
 def open_file(filename):
     

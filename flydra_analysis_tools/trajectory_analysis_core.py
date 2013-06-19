@@ -450,6 +450,7 @@ def calc_post_behavior(trajec, top_center, radius, landing_threshold=0.003, init
     trajec.post_behavior = []
     trajec.post_behavior_frames = []
     trajec.residency_time = None
+    trajec.post_behavior_dict = {}
     
     if np.max(trajec.speed) > 0.01 and np.max(trajec.distance_to_post) > initial_threshold: # double check to make sure fly flew
         
@@ -457,6 +458,7 @@ def calc_post_behavior(trajec, top_center, radius, landing_threshold=0.003, init
             trajec.post_behavior.append('takeoff')
             frame_of_takeoff = np.where(trajec.distance_to_post > takeoff_threshold)[0][0]
             trajec.post_behavior_frames.append(frame_of_takeoff)
+            trajec.post_behavior_dict.setdefault(frame_of_takeoff, 'takeoff')
             candidate_behavior = 'landing'
         else:
             candidate_behavior = 'landing'
@@ -478,6 +480,7 @@ def calc_post_behavior(trajec, top_center, radius, landing_threshold=0.003, init
                         trajec.post_behavior.append('landing')
                         frame_of_landing = frame
                         trajec.post_behavior_frames.append(frame_of_landing)
+                        trajec.post_behavior_dict.setdefault(frame_of_landing, 'landing')
                         candidate_behavior = 'takeoff'
                         was_flying = False
                         break
@@ -487,6 +490,7 @@ def calc_post_behavior(trajec, top_center, radius, landing_threshold=0.003, init
                         trajec.post_behavior.append('takeoff')
                         frame_of_takeoff = frame
                         trajec.post_behavior_frames.append(frame_of_takeoff)
+                        trajec.post_behavior_dict.setdefault(frame_of_takeoff, 'takeoff')
                         candidate_behavior = 'landing'
                         break
             
