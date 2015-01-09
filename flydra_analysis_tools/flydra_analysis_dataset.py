@@ -32,7 +32,7 @@ class Dataset:
         (obj_ids, use_obj_ids, is_mat_file, data_file, extra) = ca.initial_file_load(filename)
         return ca, obj_ids, use_obj_ids, is_mat_file, data_file, extra
 
-    def load_data(self, filename, kalman_smoothing=False, dynamic_model=None, fps=None, info={}, save_covariance=False):
+    def load_data(self, filename, kalman_smoothing=False, dynamic_model=None, fps=None, info={}, save_covariance=False, experiment_length=19*60*60):
         # use info to pass information to trajectory instances as a dictionary. 
         # eg. info={"post_type": "black"}
         # save_covariance: set to True if you need access to the covariance data. Keep as False if this is not important for analysis (takes up lots of space)
@@ -66,6 +66,7 @@ class Dataset:
         self.dynamic_model = dyn_model
         self.fps = fps
         
+        time_start = None
         # load object id's and save as Trajectory instances
         for obj_id in use_obj_ids:
             print 'processing: ', obj_id
@@ -84,7 +85,17 @@ class Dataset:
             trajecbase = filenamebase.rstrip('5').rstrip('.h').lstrip('DATA').rstrip('.kalmanized')
             trajec_id = trajecbase + '_' + str(obj_id) # filename details + original object id - this is unique
             tmp = Trajectory(trajec_id, kalman_rows, info=info, fps=fps, save_covariance=save_covariance, extra=extra)
-            self.trajecs.setdefault(trajec_id, tmp)
+            
+            tmp.h5 = os.path.basename(filename)
+            
+            if time_start is None:
+                time_start = tmp.timestamp_epoch
+            else:
+                if tmp.timestamp_epoch - time_start > experiment_length:
+                    break
+                else:
+                    self.trajecs.setdefault(trajec_id, tmp)
+            
             
         self.h5_files_loaded.append(os.path.basename(filename))
             
@@ -260,6 +271,15 @@ def make_mini_dataset(dataset, nkeys = 500):
             break
     return new_dataset
     
+def make_dataset_from_keys(dataset, keys):
+    # helpful if working with large datasets and you want a small one to test out code/plots
+    new_dataset = Dataset()
+    for key in keys:
+        trajec = dataset.trajecs[key]
+        new_dataset.trajecs.setdefault(trajec.key, trajec)
+    return new_dataset
+    
+    
 def count_flies(dataset, attr=None, val=None):
     
     print 'n flies: ', len(dataset.trajecs.keys())
@@ -279,12 +299,15 @@ def count_flies(dataset, attr=None, val=None):
         else:
             count_for_attribute(attr, val)
             
-def get_basic_statistics(dataset):
+def get_basic_statistics(dataset, keys=None):
+    if keys is None:
+        keys = dataset.trajecs.keys()
     
     n_flies = 0
     mean_speeds = []
     frame_length = []
-    for k, trajec in dataset.trajecs.items():
+    for key in keys:
+        trajec = dataset.trajecs[key]
         n_flies += 1
         mean_speeds.append( np.mean(trajec.speed) )
         frame_length.append( len(trajec.speed) )
@@ -385,6 +408,18 @@ def get_keys_with_attr(dataset, attributes, values, keys=None):
         if add_key:
             keys_with_attr.append(key)
     return keys_with_attr
+    
+def get_keys_of_length_greater_than(dataset, length, n, keys=None):
+    if keys is None:
+        keys = dataset.trajecs.keys()
+    keys_of_length = []
+    for key in keys:
+        if dataset.trajecs[key].length > length:
+            keys_of_length.append(key)
+        if len(keys_of_length) > n:
+            break
+        
+    return keys_of_length
     
 def print_values_for_attributes_for_keys(dataset, attributes, keys, index=0):
     if type(attributes) is not list:
@@ -518,9 +553,34 @@ def remove_keys_from_h5(dataset, h5):
     for i, f in enumerate(dataset.h5_files_loaded):
         if h5 in f:
             dataset.h5_files_loaded.pop(i)
+
+def get_keys_from_date(dataset, date):
+    keys = []
+    for key in dataset.trajecs.keys():
+        if date in key:
+            keys.append(key)
+    return keys
+
+def get_key_list_for_dates(dataset):
+    keylist = {}
+    for h5 in dataset.h5_files_loaded:
+        date = h5[4:12]
+        keys = get_keys_from_date(dataset, date)
+        keylist.setdefault(date, keys)
+    return keylist
     
-    
-             
+def get_keys_in_time_range(dataset, timestamp_local_float_start, timestamp_local_float_end, keys=None):
+    if keys is None:
+        keys = dataset.trajecs.keys()
+        
+    keys_in_range = []
+    for key in keys:
+        trajec = dataset.trajecs[key]
+        if trajec.timestamp_local_float > timestamp_local_float_start and trajec.timestamp_local_float < timestamp_local_float_end:
+            keys_in_range.append(key)
+    return keys_in_range
+
+
 ###################################################################################################
 # Example usage
 ###################################################################################################

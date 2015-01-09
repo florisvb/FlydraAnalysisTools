@@ -9,6 +9,17 @@ from matplotlib import patches
 
 import trajectory_analysis_core as tac
 
+
+def plot_trajectory_lengths(dataset):
+    lengths = []
+    for key, trajec in dataset.trajecs.items():
+        lengths.append(trajec.length)
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+
+    fpl.histogram(ax, [np.array(lengths)], bins=50, show_smoothed=False)
+
 def example_cartesian_spagetti(dataset, axis='xy', xlim=(-.15, .15), ylim=(-.25, .25), zlim=(-.15, -.15), keys=None, keys_to_highlight=[], show_saccades=False, colormap='jet', color_attribute=None, artists=None):
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -152,7 +163,7 @@ def prep_cartesian_spagetti_for_saving(ax):
 
 ###############
 
-def heatmap(ax, dataset, keys=None, frame_list=None, axis='xy', logcolorscale=False, xticks=None, yticks=None, zticks=None, rticks=None, normalize_for_speed=True, colornorm=None, center=[0,0], bins=[100,100,100], depth_range=None):  
+def heatmap(ax, dataset, keys=None, frame_list=None, axis='xy', logcolorscale=False, xticks=None, yticks=None, zticks=None, rticks=None, normalize_for_speed=True, colornorm=None, center=[0,0], bins=[100,100,100], depth_range=None, colormap='jet', return_img=False, weight_attribute=None, velocity_axis=2, velocity_range=[-100,100]):  
     
     if axis == 'xy':
         axis_num = [0,1,2]
@@ -185,6 +196,10 @@ def heatmap(ax, dataset, keys=None, frame_list=None, axis='xy', logcolorscale=Fa
     xpos = np.array([])
     ypos = np.array([])
     zpos = np.array([])
+    if weight_attribute is not None:
+        weights = np.array([])
+    else:
+        weights = None
     radial = np.array([])
     
     i = -1
@@ -199,9 +214,19 @@ def heatmap(ax, dataset, keys=None, frame_list=None, axis='xy', logcolorscale=Fa
                 frames = []
                 for f in range(trajec.length):
                     if flymath.in_range(trajec.positions[f,axis_num[-1]], depth_range):
-                        frames.append(f)
+                        if flymath.in_range(trajec.velocities[f,velocity_axis], velocity_range):
+                            frames.append(f)
         else:
-            frames = frame_list[i]
+            if depth_range is None:
+                frames = frame_list[i]
+            else:
+                frames = []
+                for f in range(trajec.length):
+                    if flymath.in_range(trajec.positions[f,axis_num[-1]], depth_range):
+                        if flymath.in_range(trajec.velocities[f,velocity_axis], velocity_range):
+                            if f in frame_list[i]:
+                                frames.append(f)
+            
             
             
         
@@ -211,9 +236,9 @@ def heatmap(ax, dataset, keys=None, frame_list=None, axis='xy', logcolorscale=Fa
             continue
             
         if normalize_for_speed:
-            xpos = np.hstack( (xpos, trajec.positions_normalized_by_speed[frames,0]) )
-            ypos = np.hstack( (ypos, trajec.positions_normalized_by_speed[frames,1]) )
-            zpos = np.hstack( (zpos, trajec.positions_normalized_by_speed[frames,2]) )
+            xpos = np.hstack( (xpos, trajec.positions_normalized_by_speed[0:-1,0]) )
+            ypos = np.hstack( (ypos, trajec.positions_normalized_by_speed[0:-1,1]) )
+            zpos = np.hstack( (zpos, trajec.positions_normalized_by_speed[0:-1,2]) )
             if axis == 'rz':
                 radial = np.hstack( (radial, trajec.xy_distance_to_point_normalized_by_speed[frames]) )
     
@@ -221,17 +246,19 @@ def heatmap(ax, dataset, keys=None, frame_list=None, axis='xy', logcolorscale=Fa
             xpos = np.hstack( (xpos, trajec.positions[frames,0]) )
             ypos = np.hstack( (ypos, trajec.positions[frames,1]) )
             zpos = np.hstack( (zpos, trajec.positions[frames,2]) )
+            if weight_attribute is not None:
+                weights = np.hstack( (weights, trajec.__getattribute__(weight_attribute)[frames]) )
             if axis == 'rz':
                 radial = np.hstack( (radial, trajec.xy_distance_to_point[frames]) )
     
     if axis == 'xy':
-        fpl.histogram2d(ax, xpos, ypos, bins=[bins[0], bins[1]], logcolorscale=logcolorscale, colornorm=colornorm)
+        img = fpl.histogram2d(ax, xpos, ypos, bins=[bins[0], bins[1]], logcolorscale=logcolorscale, colornorm=colornorm, colormap=colormap, return_img=return_img, weights=weights)
     elif axis == 'xz':
-        fpl.histogram2d(ax, xpos, zpos, bins=[bins[0], bins[2]], logcolorscale=logcolorscale, colornorm=colornorm)
+        img = fpl.histogram2d(ax, xpos, zpos, bins=[bins[0], bins[2]], logcolorscale=logcolorscale, colornorm=colornorm, colormap=colormap, return_img=return_img, weights=weights)
     elif axis == 'yz':
-        fpl.histogram2d(ax, ypos, zpos, bins=[bins[1], bins[2]], logcolorscale=logcolorscale, colornorm=colornorm)
+        img = fpl.histogram2d(ax, ypos, zpos, bins=[bins[1], bins[2]], logcolorscale=logcolorscale, colornorm=colornorm, colormap=colormap, return_img=return_img, weights=weights)
     elif axis == 'rz':
-        fpl.histogram2d(ax, radial, zpos, bins=[bins[0], bins[1]], logcolorscale=logcolorscale, colornorm=colornorm)
+        img = fpl.histogram2d(ax, radial, zpos, bins=[bins[0], bins[1]], logcolorscale=logcolorscale, colornorm=colornorm, colormap=colormap, return_img=return_img, weights=weights)
         
     if axis == 'xy':
         use_xticks = xticks
@@ -262,6 +289,8 @@ def heatmap(ax, dataset, keys=None, frame_list=None, axis='xy', logcolorscale=Fa
     
     ax.set_aspect('equal')
     
+    if return_img:
+        return  img
 
 def show_start_stop(dataset):
     

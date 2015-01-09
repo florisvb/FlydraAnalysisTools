@@ -191,7 +191,7 @@ def calc_heading_for_axes(trajec, axis='xy'):
     #trajec.heading_smooth_diff2 = xsmooth[:,2]
     
     
-def calc_airvelocity(trajec, windvelocity=[0,0,0]):
+def calc_airvelocity(trajec, windvelocity=[-.4,0,0]):
     if type(windvelocity) is list:
         windvelocity = np.array(windvelocity)
         

@@ -2,4 +2,5 @@ import flydra_analysis_dataset
 import dataset_analysis_core 
 import trajectory_analysis_core
 import flydra_analysis_plot
-
+import save_dataset_to_txt_for_dryad
+import plot_diagnostics
